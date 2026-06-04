@@ -33,7 +33,7 @@ public class DocumentServiceImpl implements DocumentService {
                             .key(key)
                             .contentType(contentType)
                             .build(),
-                    RequestBody.fromFile(filePart.getResource().getFile())
+                    RequestBody.fromInputStream(filePart.getInputStream(), filePart.getSize())
             );
 
             return new DocumentUploadResponse(key);
