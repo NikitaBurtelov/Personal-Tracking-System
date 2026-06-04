@@ -24,10 +24,8 @@ dependencies {
     implementation(rootProject.extra["springBootStarterSecurity"] as String)
     developmentOnly(rootProject.extra["springBootDevtools"] as String)
 
-    implementation(rootProject.extra["redis"] as String)
-
-    implementation(rootProject.extra["bucket4jCore"] as String)
-    implementation(rootProject.extra["bucket4jLettuce"] as String)
+//    implementation(rootProject.extra["bucket4jCore"] as String)
+//    implementation(rootProject.extra["bucket4jLettuce"] as String)
 
     implementation(rootProject.extra["lombok"] as String)
     compileOnly(rootProject.extra["lombok"] as String)
