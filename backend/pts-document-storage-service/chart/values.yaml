@@ -37,7 +37,7 @@ containerPort: 8094
 env:
   SPRING_PROFILES_ACTIVE: prod
   SERVER_PORT: "8094"
-  MINIO_URL: ""
+  MINIO_URL: "http://minio.dev.svc.cluster.local:9000"
   MINIO_REGION: ""
   MINIO_IMG_BUCKET_NAME: ""
   MINIO_IMG_SIGNATURE_DURATION: "3600"
