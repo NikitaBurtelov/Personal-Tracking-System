@@ -15,7 +15,7 @@ jobs:
     buildContext: backend
     output:
       type: RegistryOutput
-      destinations: '@server@/@project_path@/pts-document-storage-service:@build_number@ @server@/@project_path@/pts-document-storage-service:latest'
+      destinations: '@server@/pts/pts-backend-java/pts-document-storage-service:@build_number@ @server@/pts/pts-backend-java/pts-document-storage-service:latest'
     registryLogins:
     - registryUrl: '@server_url@'
       userName: '@job_token@'
@@ -46,7 +46,7 @@ jobs:
         helm upgrade --install pts-document-storage-service backend/pts-document-storage-service/chart \
           --namespace dev \
           --create-namespace \
-          --set image.repository=@server@/@project_path@/pts-document-storage-service \
+          --set image.repository=@server@/pts/pts-backend-java/pts-document-storage-service \
           --set image.tag=@build_number@ \
           --set imagePullSecrets[0].name=onedev-registry \
           --wait \
