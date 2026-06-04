@@ -13,11 +13,11 @@ FROM eclipse-temurin:21-jre
 
 WORKDIR /app
 
-RUN addgroup --system pts && adduser --system --ingroup pts pts
+RUN addgroup --system --gid 10001 pts && adduser --system --uid 10001 --ingroup pts pts
 
 COPY --from=build /workspace/pts-document-storage-service/build/libs/*.jar app.jar
 
-USER pts
+USER 10001:10001
 
 EXPOSE 8094
 
