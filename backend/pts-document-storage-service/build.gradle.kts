@@ -20,8 +20,6 @@ dependencies {
     implementation(rootProject.extra["springBootStarterActuator"] as String)
     implementation(rootProject.extra["springBootStarterLogging"] as String)
     implementation(rootProject.extra["springBootStarterValidation"] as String)
-//    implementation(rootProject.extra["springBootStarterOauth2"] as String)
-//    implementation(rootProject.extra["springBootStarterSecurity"] as String)
     developmentOnly(rootProject.extra["springBootDevtools"] as String)
 
 //    implementation(rootProject.extra["bucket4jCore"] as String)
