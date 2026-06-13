@@ -16,6 +16,9 @@ dependencies {
     implementation(libs.kafka)
 
     implementation(libs.lombok)
+    compileOnly(libs.lombok)
+    annotationProcessor(libs.lombok)
+
     implementation(libs.dotenv)
 
     implementation(libs.s3)
