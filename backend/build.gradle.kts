@@ -67,13 +67,13 @@ extra.apply {
 
     set("s3", "software.amazon.awssdk:s3:2.40.2")
 
-    set("rabbitMQ", "org.springframework.boot:spring-boot-amqp:4.1.0-RC1")
+    set("rabbitMQ", "org.springframework.boot:spring-boot-amqp")
 
     set("springKafka", "org.springframework.kafka:spring-kafka")
     set("springExpression", "org.springframework:spring-expression")
-    set("springRetry", "org.springframework.retry:spring-retry:2.0.3")
-    set("springDoc", "org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9")
-    set("springDocReact", "org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.9")
+    set("springRetry", "org.springframework.retry:spring-retry")
+    set("springDoc", "org.springdoc:springdoc-openapi-starter-webmvc-ui")
+    set("springDocReact", "org.springdoc:springdoc-openapi-starter-webflux-ui")
     set("kotlinLogging", "io.github.microutils:kotlin-logging-jvm:3.0.5")
 
     set("springBootStarterTest", "org.springframework.boot:spring-boot-starter-test")
