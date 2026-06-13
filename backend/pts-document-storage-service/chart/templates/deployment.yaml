@@ -43,17 +43,39 @@ spec:
         envFrom:
         - configMapRef:
             name: {{ include "pts-document-storage-service.fullname" . }}-env
+        {{- if or .Values.existingSecretEnv .Values.secretEnv.create }}
         env:
-        - name: MINIO_LOGIN
+        {{- if kindIs "map" .Values.existingSecretEnv }}
+        {{- $secretName := .Values.existingSecretEnv.name }}
+        {{- range $envName, $secretKey := .Values.existingSecretEnv.keys }}
+        - name: {{ $envName }}
           valueFrom:
             secretKeyRef:
-              name: {{ include "pts-document-storage-service.secretName" . }}
-              key: {{ .Values.existingSecretEnv.keys.MINIO_LOGIN }}
-        - name: MINIO_PASSWORD
+              name: {{ $secretName }}
+              key: {{ $secretKey }}
+        {{- end }}
+        {{- else }}
+        {{- range $secret := .Values.existingSecretEnv }}
+        {{- range $envName, $secretKey := $secret.keys }}
+        - name: {{ $envName }}
           valueFrom:
             secretKeyRef:
-              name: {{ include "pts-document-storage-service.secretName" . }}
-              key: {{ .Values.existingSecretEnv.keys.MINIO_PASSWORD }}
+              name: {{ $secret.name }}
+              key: {{ $secretKey }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
+        {{- if and .Values.secretEnv.create (not .Values.existingSecretEnv) }}
+        {{- $generatedSecretName := include "pts-document-storage-service.secretName" . }}
+        {{- range $envName, $_ := .Values.secretEnv.values }}
+        - name: {{ $envName }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ $generatedSecretName }}
+              key: {{ $envName }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
         livenessProbe:
           {{- toYaml .Values.livenessProbe | nindent 10 }}
         readinessProbe:
