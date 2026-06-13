@@ -1,9 +1,4 @@
 plugins {
-    kotlin("jvm")
-    kotlin("plugin.spring")
-    kotlin("plugin.allopen")
-    kotlin("plugin.noarg")
-    id("java")
     id("org.springframework.boot")
     id("io.spring.dependency-management")
     id("jacoco")
@@ -13,45 +8,26 @@ group = "${rootProject.group}.document.storage"
 version = rootProject.version
 
 dependencies {
-    implementation(rootProject.extra["springBootStarterLogging"] as String)
-    implementation(rootProject.extra["s3"] as String)
+    implementation(libs.spring.web)
+    implementation(libs.spring.actuator)
+    implementation(libs.spring.validation)
 
-    implementation(rootProject.extra["springBootStarterWeb"] as String)
-    implementation(rootProject.extra["springBootStarterActuator"] as String)
-    implementation(rootProject.extra["springBootStarterLogging"] as String)
-    implementation(rootProject.extra["springBootStarterValidation"] as String)
-    developmentOnly(rootProject.extra["springBootDevtools"] as String)
+    implementation(libs.spring.amqp)
+    implementation(libs.kafka)
 
-//    implementation(rootProject.extra["bucket4jCore"] as String)
-//    implementation(rootProject.extra["bucket4jLettuce"] as String)
+    implementation(libs.lombok)
+    implementation(libs.dotenv)
 
-    implementation(rootProject.extra["rabbitMQ"] as String)
+    implementation(libs.s3)
+    runtimeOnly(libs.postgresql)
 
-    implementation(rootProject.extra["lombok"] as String)
-    compileOnly(rootProject.extra["lombok"] as String)
-    annotationProcessor(rootProject.extra["lombok"] as String)
+    implementation(libs.springdoc)
 
-//    implementation(rootProject.extra["springBootStarterDataJpa"] as String)
-//    implementation(rootProject.extra["springBootStarterDataJdbc"] as String)
-//    implementation(rootProject.extra["springBootStarterJdbc"] as String)
-//    implementation(rootProject.extra["postgresql"] as String)
-//    runtimeOnly(rootProject.extra["postgresql"] as String)
+    developmentOnly("org.springframework.boot:spring-boot-devtools")
 
-    implementation(rootProject.extra["lombok"] as String)
-    compileOnly(rootProject.extra["lombok"] as String)
-    annotationProcessor(rootProject.extra["lombok"] as String)
-
-    developmentOnly(rootProject.extra["springBootDevtools"] as String)
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    testImplementation(libs.spring.test)
 }
 
 tasks.withType<org.springframework.boot.gradle.tasks.bundling.BootJar> {
     mainClass.set("org.pts.document.storage.DocumentStorageApplication")
-}
-
-tasks.register("serviceInfo") {
-    doLast {
-        println("Module: pts-document-storage-service")
-        println("Group: ${project.group}, Version: ${project.version}")
-    }
 }
