@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 public class DocumentConsumer {
 
     @RabbitListener(queues = "#{documentStorageQueue.name}")
-    public void consume() {
-        log.info("documentId");
+    public void consume(String message) {
+        log.info("message={}", message);
     }
 }
