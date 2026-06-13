@@ -1,13 +1,11 @@
-FROM gradle:8.14-jdk21 AS build
+FROM gradle:9.3.0-jdk21 AS build
 
 WORKDIR /workspace
 
-COPY settings.gradle.kts build.gradle.kts ./
-COPY pts-document-storage-service/build.gradle.kts pts-document-storage-service/build.gradle.kts
-RUN gradle --no-daemon :pts-document-storage-service:dependencies
+COPY . .
+RUN ./gradlew --no-daemon :pts-document-storage-service:dependencies
 
-COPY pts-document-storage-service pts-document-storage-service
-RUN gradle --no-daemon :pts-document-storage-service:bootJar
+RUN ./gradlew --no-daemon :pts-document-storage-service:bootJar
 
 FROM eclipse-temurin:21-jre
 
