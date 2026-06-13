@@ -41,6 +41,16 @@ env:
   MINIO_REGION: "fin-1"
   MINIO_IMG_BUCKET_NAME: "pts-document-storage"
   MINIO_IMG_SIGNATURE_DURATION: "3600"
+  RABBITMQ_HOST: ""
+  RABBITMQ_PORT: ""
+  RABBIT_EXCHANGE_NAME: "domain.events"
+  RABBIT_EXCHANGE_DURABLE: "true"
+  RABBIT_EXCHANGE_AUTO_DELETE: "false"
+  RABBIT_QUEUE_NAME: "document-storage.queue"
+  RABBIT_QUEUE_DURABLE: true
+  RABBIT_QUEUE_EXCLUSIVE: false
+  RABBIT_QUEUE_AUTO_DELETE: false
+  RABBIT_BINDING_ROUTING_KEY: "document.*"
 
 secretEnv:
   create: false
