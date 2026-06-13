@@ -27,6 +27,8 @@ dependencies {
 //    implementation(rootProject.extra["bucket4jCore"] as String)
 //    implementation(rootProject.extra["bucket4jLettuce"] as String)
 
+    implementation(rootProject.extra["rabbitMQ"] as String)
+
     implementation(rootProject.extra["lombok"] as String)
     compileOnly(rootProject.extra["lombok"] as String)
     annotationProcessor(rootProject.extra["lombok"] as String)

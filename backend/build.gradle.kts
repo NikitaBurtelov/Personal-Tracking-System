@@ -67,6 +67,8 @@ extra.apply {
 
     set("s3", "software.amazon.awssdk:s3:2.40.2")
 
+    set("rabbitMQ", "org.springframework.boot:spring-boot-amqp:4.1.0-RC1")
+
     set("springKafka", "org.springframework.kafka:spring-kafka")
     set("springExpression", "org.springframework:spring-expression")
     set("springRetry", "org.springframework.retry:spring-retry:2.0.3")
