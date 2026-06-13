@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 @Log4j2
 public class DocumentConsumer {
 
-    @RabbitListener(queues = "#{documentStorageQueue.name}")
+    @RabbitListener(queues = "document-storage.queue")
     public void consume(String message) {
         log.info("message={}", message);
     }
