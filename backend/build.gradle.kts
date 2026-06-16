@@ -5,10 +5,12 @@ plugins {
     id("java-library")
     id("io.spring.dependency-management") version "1.1.7"
     id("jacoco")
+    id("com.palantir.git-version") version "5.0.0"
 }
 
 group = "org.pts"
-version = "1.0.0"
+val gitVersion: groovy.lang.Closure<String> by extra
+version = gitVersion().removePrefix("v")
 
 java {
     toolchain {
@@ -43,9 +45,25 @@ subprojects {
     }
 
     dependencies {
-        testImplementation("org.springframework.boot:spring-boot-starter-test")
-        testImplementation("org.junit.jupiter:junit-jupiter:5.11.0")
-        testImplementation("org.mockito:mockito-core:5.12.0")
+        val libs = rootProject.extensions
+            .getByType(VersionCatalogsExtension::class)
+            .named("libs")
+
+        implementation(libs.findLibrary("spring-logging").get())
+
+        implementation(libs.findLibrary("util-dotenv").get())
+        implementation(libs.findLibrary("util-micrometer").get())
+
+        testImplementation(libs.findLibrary("spring-test").get())
+        testImplementation(libs.findLibrary("test-junit").get())
+        testImplementation(libs.findLibrary("test-mockito").get())
+    }
+
+    tasks.register("printVersion") {
+        description = "project version"
+        doLast {
+            println("${project.name}: ${project.version}")
+        }
     }
 
     tasks.withType<Test> {

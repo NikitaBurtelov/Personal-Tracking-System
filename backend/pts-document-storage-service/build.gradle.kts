@@ -9,28 +9,43 @@ version = rootProject.version
 
 dependencies {
     implementation(libs.spring.web)
-    implementation(libs.spring.actuator)
-    implementation(libs.spring.validation)
-
     implementation(libs.spring.amqp)
-    implementation(libs.kafka)
+    implementation(libs.spring.security)
+    implementation(libs.spring.oauth2)
+    implementation(libs.spring.doc)
+    implementation(libs.spring.actuator)
+    implementation(libs.spring.redis)
+    implementation(libs.spring.validation)
+    implementation(libs.spring.jdbc)
+    implementation(libs.spring.data.jpa)
+    implementation(libs.spring.data.jdbc)
 
-    implementation(libs.lombok)
-    compileOnly(libs.lombok)
-    annotationProcessor(libs.lombok)
+    implementation(libs.infra.liquibase)
 
-    implementation(libs.dotenv)
+    implementation(libs.util.bucket4j.core)
+    implementation(libs.util.bucket4j.lettuce)
+    implementation(libs.util.lombok)
+    compileOnly(libs.util.lombok)
+    annotationProcessor(libs.util.lombok)
 
-    implementation(libs.s3)
-    runtimeOnly(libs.postgresql)
+    implementation(libs.infra.awssdk.s3)
+    implementation(libs.infra.awssdk.client.apache)
+    implementation(libs.infra.awssdk.client.spi)
+    runtimeOnly(libs.infra.postgresql)
 
-    implementation(libs.springdoc)
-
-    developmentOnly("org.springframework.boot:spring-boot-devtools")
+    developmentOnly(libs.spring.devtools)
 
     testImplementation(libs.spring.test)
 }
 
 tasks.withType<org.springframework.boot.gradle.tasks.bundling.BootJar> {
     mainClass.set("org.pts.document.storage.DocumentStorageApplication")
+}
+
+tasks.register("serviceInfo") {
+    description = ""
+    doLast {
+        println("Module: document-storage-service")
+        println("Group: ${project.group}, Version: ${project.version}")
+    }
 }

@@ -1,0 +1,9 @@
+databaseChangeLog:
+
+  - changeSet:
+      id: 000-create-schema
+      author: document-storage-service
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/000-create-schema.sql
+            relativeToChangelogFile: false
