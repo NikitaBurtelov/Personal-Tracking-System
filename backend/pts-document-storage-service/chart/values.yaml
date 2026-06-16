@@ -49,6 +49,9 @@ env:
   RABBIT_QUEUE_EXCLUSIVE: false
   RABBIT_QUEUE_AUTO_DELETE: false
   RABBIT_BINDING_ROUTING_KEY: "document.*"
+  DATASOURCE_URL: "TODO_DATASOURCE_URL"
+  REDIS_HOST: "TODO_REDIS_HOST"
+  REDIS_PORT: "TODO_REDIS_HOST"
 
 secretEnv:
   create: false
@@ -61,6 +64,9 @@ secretEnv:
     RABBITMQ_USERNAME: ""
     RABBITMQ_PASSWORD: ""
     RABBITMQ_VHOST: "/"
+    DATASOURCE_USERNAME: ""
+    DATASOURCE_PASSWORD: ""
+    REDIS_PASSWORD: ""
 
 existingSecretEnv:
   - name: pts-document-storage-service-s3-credentials
@@ -74,6 +80,13 @@ existingSecretEnv:
       RABBITMQ_USERNAME: RABBITMQ_USERNAME
       RABBITMQ_PASSWORD: RABBITMQ_PASSWORD
       RABBITMQ_VHOST: RABBITMQ_VHOST
+  - name: pts-document-storage-service-redis-config
+    keys:
+      REDIS_PASSWORD: REDIS_PASSWORD
+  - name: pts-document-storage-service-datasource-config
+    keys:
+      DATASOURCE_USERNAME: DATASOURCE_USERNAME
+      DATASOURCE_PASSWORD: DATASOURCE_PASSWORD
 
 resources: {}
 
