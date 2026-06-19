@@ -1,4 +1,4 @@
-package org.pts.document.storage.config.properties;
+package org.pts.document.storage.config.mq;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -9,8 +9,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "rabbit")
 public class RabbitProperties {
     private Exchange exchange = new Exchange();
-    private Queue documentStorageQueue = new Queue();
-    private Binding documentStorageBinding = new Binding();
+    private Queue uploadDocumentSourceCommandQueue = new Queue();
+    private Queue deleteDocumentSourceCommandQueue = new Queue();
+    private Queue getDocumentSourceRequestQueue = new Queue();
+    private Binding uploadDocumentSourceCommandBinding = new Binding();
+    private Binding deleteDocumentSourceCommandBinding = new Binding();
+    private Binding getDocumentSourceRequestBinding = new Binding();
 
     @Getter
     @Setter

@@ -1,4 +1,4 @@
-package org.pts.document.storage.service;
+package org.pts.document.storage.service.storage;
 
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -9,12 +9,16 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
-interface StorageService {
+public interface StorageService {
     PutObjectResponse putObject(PutObjectRequest request, RequestBody body);
 
     PutObjectResponse putObject(String bucket, String key, String contentType, InputStream stream) throws IOException;
 
-    ResponseInputStream<GetObjectResponse> getObject(GetObjectRequest request);
+    ResponseInputStream<GetObjectResponse> getObjectStream(GetObjectRequest request);
+
+    byte[] getObjectBytes(GetObjectRequest request) throws IOException;
+
+    HeadObjectResponse getHeadObject(HeadObjectRequest request) throws IOException;
 
     void deleteObject(DeleteObjectRequest request);
 

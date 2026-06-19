@@ -1,26 +1,25 @@
-package org.pts.document.storage.config.properties;
+package org.pts.document.storage.config.minio;
 
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
 
-@Configuration
-@ConfigurationProperties(prefix = "minio")
 @Setter
 @Getter
+@ConfigurationProperties(prefix = "minio")
 public class MinIOProperties {
     private String url;
     private String login;
     private String password;
     private String region;
-    private Img img = new Img();
+    private Bucket documentPersistenceBucket = new Bucket();
+    private Bucket documentTempBucket = new Bucket();
     private SdkConfig sdkConfig = new SdkConfig();
     private ClientConfig clientConfig = new ClientConfig();
 
     @Setter
     @Getter
-    public static class Img {
+    public static class Bucket {
         private String bucketName;
         private long signatureDuration;
     }

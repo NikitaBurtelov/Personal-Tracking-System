@@ -1,6 +1,7 @@
-package org.pts.document.storage.service;
+package org.pts.document.storage.service.storage;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 class StorageServiceImpl implements StorageService {
@@ -28,7 +30,12 @@ class StorageServiceImpl implements StorageService {
     }
 
     @Override
-    public PutObjectResponse putObject(String bucket, String key, String contentType, InputStream stream) throws IOException {
+    public PutObjectResponse putObject(
+            String bucket,
+            String key,
+            String contentType,
+            InputStream stream
+    ) throws IOException {
         return s3Client.putObject(
                 PutObjectRequest.builder()
                         .bucket(bucket)
@@ -40,9 +47,21 @@ class StorageServiceImpl implements StorageService {
     }
 
     @Override
-    public ResponseInputStream<GetObjectResponse> getObject(GetObjectRequest request) {
+    public ResponseInputStream<GetObjectResponse> getObjectStream(GetObjectRequest request) {
         return s3Client.getObject(request);
     }
+
+    @Override
+    public byte[] getObjectBytes(GetObjectRequest request) throws IOException {
+        return s3Client.getObject(request).readAllBytes();
+    }
+
+
+    @Override
+    public HeadObjectResponse getHeadObject(HeadObjectRequest request) {
+        return s3Client.headObject(request);
+    }
+
 
     @Override
     public void deleteObject(DeleteObjectRequest request) {
