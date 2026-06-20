@@ -49,7 +49,6 @@ env:
   RABBIT_QUEUE_EXCLUSIVE: false
   RABBIT_QUEUE_AUTO_DELETE: false
   RABBIT_BINDING_ROUTING_KEY: "document.*"
-  DATASOURCE_URL: "TODO_DATASOURCE_URL"
   REDIS_HOST: "TODO_REDIS_HOST"
   REDIS_PORT: "TODO_REDIS_HOST"
 
@@ -83,10 +82,11 @@ existingSecretEnv:
   - name: pts-document-storage-service-redis-config
     keys:
       REDIS_PASSWORD: REDIS_PASSWORD
-  - name: pts-document-storage-service-datasource-config
+  - name: pts-document-storage-service-db-config
     keys:
-      DATASOURCE_USERNAME: DATASOURCE_USERNAME
-      DATASOURCE_PASSWORD: DATASOURCE_PASSWORD
+      DATASOURCE_URL: SPRING_DATASOURCE_URL
+      DATASOURCE_USERNAME: SPRING_DATASOURCE_USERNAME
+      DATASOURCE_PASSWORD: SPRING_DATASOURCE_PASSWORD
 
 resources: {}
 
