@@ -21,7 +21,7 @@ import java.io.IOException;
 public class DocumentConsumer {
     private final JobManagerService jobManagerService;
 
-    @RabbitListener(queues = "${rabbit.get-document-source-command-queue.name}")
+    @RabbitListener(queues = "${rabbit.get-document-source-request-queue.name}")
     public void getDocumentSource(GetDocumentSourceRequest message) {
         log.info("message={}", message);
     }
