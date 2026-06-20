@@ -49,8 +49,11 @@ env:
   RABBIT_QUEUE_EXCLUSIVE: false
   RABBIT_QUEUE_AUTO_DELETE: false
   RABBIT_BINDING_ROUTING_KEY: "document.*"
-  REDIS_HOST: "TODO_REDIS_HOST"
-  REDIS_PORT: "TODO_REDIS_HOST"
+  REDIS_HOST: "localhost"
+  REDIS_PORT: "6379"
+  REDIS_PASSWORD: ""
+  FEED_TTL: "3600"
+  MANAGEMENT_HEALTH_REDIS_ENABLED: "false"
 
 secretEnv:
   create: false
@@ -79,9 +82,6 @@ existingSecretEnv:
       RABBITMQ_USERNAME: RABBITMQ_USERNAME
       RABBITMQ_PASSWORD: RABBITMQ_PASSWORD
       RABBITMQ_VHOST: RABBITMQ_VHOST
-  - name: pts-document-storage-service-redis-config
-    keys:
-      REDIS_PASSWORD: REDIS_PASSWORD
   - name: pts-document-storage-service-db-config
     keys:
       DATASOURCE_URL: SPRING_DATASOURCE_URL
