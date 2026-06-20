@@ -39,8 +39,6 @@ env:
   SERVER_PORT: "8094"
   MINIO_URL: "http://minio.dev.svc.cluster.local:9000"
   MINIO_REGION: "fin-1"
-  MINIO_IMG_BUCKET_NAME: "pts-document-storage"
-  MINIO_IMG_SIGNATURE_DURATION: "3600"
   RABBIT_EXCHANGE_NAME: "domain.events"
   RABBIT_EXCHANGE_DURABLE: "true"
   RABBIT_EXCHANGE_AUTO_DELETE: "false"
@@ -75,6 +73,11 @@ existingSecretEnv:
     keys:
       MINIO_LOGIN: S3_ACCESS_KEY
       MINIO_PASSWORD: S3_SECRET_KEY
+  - name: pts-document-storage-service-s3-config
+    keys:
+      DOCUMENT_PERSISTENCE_BUCKET_NAME: DOCUMENT_PERSISTENCE_BUCKET_NAME
+      DOCUMENT_TEMP_BUCKET_NAME: DOCUMENT_TEMP_BUCKET_NAME
+      MASTER_KEY: MASTER_KEY
   - name: pts-document-storage-service-rabbitmq-config
     keys:
       RABBITMQ_HOST: RABBITMQ_HOST
