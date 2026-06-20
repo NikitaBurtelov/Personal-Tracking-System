@@ -1,3 +1,5 @@
+set search_path to document_storage_schema;
+
 CREATE TABLE outbox_item
 (
     id          BIGINT PRIMARY KEY,
