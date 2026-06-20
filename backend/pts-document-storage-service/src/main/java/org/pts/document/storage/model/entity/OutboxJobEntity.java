@@ -23,10 +23,10 @@ public class OutboxJobEntity {
     private OutboxJobType type;
     @Enumerated(EnumType.STRING)
     @Column(name = "status", unique = false, nullable = false)
-    private OutboxJobStatus status; //NEW | PROCESSING | DONE | FAILED
+    private OutboxJobStatus status;
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
-    @Column(name = "updated_at", nullable = false, updatable = false)
+    @Column(name = "updated_at", nullable = false)
     private Instant updateAt;
 
     @PrePersist

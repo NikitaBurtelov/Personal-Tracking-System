@@ -15,6 +15,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class OutboxJobItemEntity {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(name = "job_id")
     private Long jobId;

@@ -15,7 +15,6 @@ import org.pts.document.storage.repository.OutboxRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -37,11 +36,9 @@ public class JobManagerServiceImpl implements JobManagerService {
         var job = OutboxJobEntity.builder()
                 .type(OutboxJobType.UPLOAD)
                 .status(OutboxJobStatus.NEW)
-                .createdAt(Instant.now())
-                .updateAt(Instant.now())
                 .build();
 
-        outboxRepository.save(job);
+        job = outboxRepository.saveAndFlush(job);
 
         var documents = new ArrayList<DocumentEntity>();
         var jobItems = new ArrayList<OutboxJobItemEntity>();
@@ -58,8 +55,6 @@ public class JobManagerServiceImpl implements JobManagerService {
                     .build();
 
             documents.add(document);
-
-            documentRepository.save(document);
 
             var jobItem = OutboxJobItemEntity.builder()
                     .jobId(job.getId())
