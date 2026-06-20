@@ -8,7 +8,7 @@ import org.pts.document.storage.model.enums.OutboxJobType;
 import java.time.Instant;
 
 @Entity
-@Table(name = "outbox")
+@Table(name = "outbox", schema = "document_storage_schema")
 @Getter
 @Setter
 @Builder(builderMethodName = "builder")

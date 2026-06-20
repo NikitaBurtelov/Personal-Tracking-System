@@ -8,7 +8,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "document")
+@Table(name = "document", schema = "document_storage_schema")
 @Getter
 @Setter
 @Builder(builderMethodName = "builder")

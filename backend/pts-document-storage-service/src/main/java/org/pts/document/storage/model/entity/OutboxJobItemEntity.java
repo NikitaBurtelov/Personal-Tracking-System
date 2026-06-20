@@ -7,7 +7,7 @@ import org.pts.document.storage.model.enums.OutboxJobStatus;
 import java.util.UUID;
 
 @Entity
-@Table(name = "outbox_item")
+@Table(name = "outbox_item", schema = "document_storage_schema")
 @Getter
 @Setter
 @Builder(builderMethodName = "builder")
