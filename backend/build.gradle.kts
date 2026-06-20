@@ -9,8 +9,7 @@ plugins {
 }
 
 group = "org.pts"
-val gitVersion: groovy.lang.Closure<String> by extra
-version = gitVersion().removePrefix("v")
+version = "1.0.0"
 
 java {
     toolchain {
