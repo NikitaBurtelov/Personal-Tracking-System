@@ -10,11 +10,8 @@ version = rootProject.version
 dependencies {
     implementation(libs.spring.web)
     implementation(libs.spring.amqp)
-    implementation(libs.spring.security)
-    implementation(libs.spring.oauth2)
     implementation(libs.spring.doc)
     implementation(libs.spring.actuator)
-    implementation(libs.spring.redis)
     implementation(libs.spring.validation)
     implementation(libs.spring.jdbc)
     implementation(libs.spring.data.jpa)
