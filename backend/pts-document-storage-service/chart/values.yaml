@@ -39,14 +39,6 @@ env:
   SERVER_PORT: "8094"
   MINIO_URL: "http://minio.dev.svc.cluster.local:9000"
   MINIO_REGION: "fin-1"
-  RABBIT_EXCHANGE_NAME: "domain.events"
-  RABBIT_EXCHANGE_DURABLE: "true"
-  RABBIT_EXCHANGE_AUTO_DELETE: "false"
-  RABBIT_QUEUE_NAME: "document-storage.queue"
-  RABBIT_QUEUE_DURABLE: true
-  RABBIT_QUEUE_EXCLUSIVE: false
-  RABBIT_QUEUE_AUTO_DELETE: false
-  RABBIT_BINDING_ROUTING_KEY: "document.*"
   REDIS_HOST: "localhost"
   REDIS_PORT: "6379"
   REDIS_PASSWORD: ""
