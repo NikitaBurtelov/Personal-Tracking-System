@@ -1,6 +1,6 @@
 set search_path to document_storage_schema;
 
-CREATE TABLE outbox_item
+CREATE TABLE IF NOT EXISTS outbox_item
 (
     id          BIGINT PRIMARY KEY,
 
@@ -11,7 +11,7 @@ CREATE TABLE outbox_item
     status      VARCHAR(50) NOT NULL
 );
 
-CREATE INDEX idx_outbox_item_job_id ON outbox_item (job_id);
-CREATE INDEX idx_outbox_item_status ON outbox_item (status);
-CREATE INDEX idx_outbox_item_job_status
+CREATE INDEX IF NOT EXISTS idx_outbox_item_job_id ON outbox_item (job_id);
+CREATE INDEX IF NOT EXISTS idx_outbox_item_status ON outbox_item (status);
+CREATE INDEX IF NOT EXISTS idx_outbox_item_job_status
     ON outbox_item (job_id, status);

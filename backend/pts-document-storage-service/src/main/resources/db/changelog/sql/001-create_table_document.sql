@@ -1,6 +1,6 @@
 set search_path to document_storage_schema;
 
-CREATE TABLE document
+CREATE TABLE IF NOT EXISTS document
 (
     id                 UUID PRIMARY KEY,
 
@@ -18,4 +18,4 @@ CREATE TABLE document
     status             VARCHAR(50)  NOT NULL
 );
 
-CREATE INDEX idx_document_status ON document (status);
+CREATE INDEX IF NOT EXISTS idx_document_status ON document (status);

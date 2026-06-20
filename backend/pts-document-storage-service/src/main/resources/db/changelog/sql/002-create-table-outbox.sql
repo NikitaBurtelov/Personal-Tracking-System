@@ -1,6 +1,6 @@
 set search_path to document_storage_schema;
 
-CREATE TABLE outbox
+CREATE TABLE IF NOT EXISTS outbox
 (
     id         BIGSERIAL PRIMARY KEY,
 
@@ -13,6 +13,6 @@ CREATE TABLE outbox
     updated_at TIMESTAMPTZ  NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_outbox_status ON outbox (status);
-CREATE INDEX idx_outbox_type ON outbox (type);
-CREATE INDEX idx_outbox_status_type ON outbox (status, type);
+CREATE INDEX IF NOT EXISTS idx_outbox_status ON outbox (status);
+CREATE INDEX IF NOT EXISTS idx_outbox_type ON outbox (type);
+CREATE INDEX IF NOT EXISTS  idx_outbox_status_type ON outbox (status, type);
