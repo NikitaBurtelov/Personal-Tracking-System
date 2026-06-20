@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.pts.document.storage.messaging.command.DeleteDocumentCommand;
 import org.pts.document.storage.messaging.command.UploadDocumentCommand;
 import org.pts.document.storage.messaging.dto.GetDocumentSourceRequest;
-import org.pts.document.storage.service.outbox.DocumentJobService;
+import org.pts.document.storage.service.outbox.JobManagerService;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.messaging.handler.annotation.Header;
@@ -19,7 +19,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 @Slf4j
 public class DocumentConsumer {
-    private final DocumentJobService documentJobService;
+    private final JobManagerService jobManagerService;
 
     @RabbitListener(queues = "document-storage.request.get.queue")
     public void getDocumentSource(GetDocumentSourceRequest message) {
@@ -34,7 +34,7 @@ public class DocumentConsumer {
     ) throws IOException {
         try {
 
-            documentJobService.createUploadDocumentJob(message);
+            jobManagerService.createUploadDocumentJob(message);
 
             channel.basicAck(tag, false);
         } catch (Exception e) {

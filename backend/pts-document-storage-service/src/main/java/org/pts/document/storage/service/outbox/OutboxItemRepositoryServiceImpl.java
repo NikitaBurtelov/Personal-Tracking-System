@@ -1,9 +1,8 @@
 package org.pts.document.storage.service.outbox;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.pts.document.storage.model.OutboxJobItemEntity;
+import org.pts.document.storage.model.entity.OutboxJobItemEntity;
 import org.pts.document.storage.repository.OutboxItemRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,8 +30,6 @@ public class OutboxItemRepositoryServiceImpl implements OutboxItemRepositoryServ
     @Transactional
     @Override
     public void setStatus(Long id, String value) {
-        var entity = outboxItemRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("entity not found id: " + id));
-        entity.setStatus(value);
+
     }
 }

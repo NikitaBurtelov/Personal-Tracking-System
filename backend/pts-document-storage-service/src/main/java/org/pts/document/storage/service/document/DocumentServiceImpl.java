@@ -3,7 +3,8 @@ package org.pts.document.storage.service.document;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.pts.document.storage.config.minio.MinIOProperties;
-import org.pts.document.storage.model.DocumentEntity;
+import org.pts.document.storage.model.entity.DocumentEntity;
+import org.pts.document.storage.model.enums.DocumentStatus;
 import org.pts.document.storage.service.security.SecurityDocumentService;
 import org.pts.document.storage.service.storage.StorageService;
 import org.springframework.stereotype.Service;
@@ -113,7 +114,7 @@ public class DocumentServiceImpl implements DocumentService {
                 .key(key)
                 .encryptedFileKey(encryptedPayload.encryptedDataKey())
                 .iv(encryptedPayload.iv())
-                .status("PROCESSING")
+                .status(DocumentStatus.UPLOADING)
                 .build();
 
         documentRepositoryService.save(
@@ -137,11 +138,11 @@ public class DocumentServiceImpl implements DocumentService {
                     RequestBody.fromInputStream(encrypts3ObjectStream, -1)
             );
 
-            documentRepositoryService.updateStatus(id, "UPLOADED");
+            documentRepositoryService.updateStatus(id, DocumentStatus.UPLOADED);
 
             return key;
         } catch (Exception e) {
-            documentRepositoryService.updateStatus(id, "FAILED");
+            documentRepositoryService.updateStatus(id, DocumentStatus.FAILED);
             throw new RuntimeException(e);
         }
     }

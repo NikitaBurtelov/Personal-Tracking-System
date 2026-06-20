@@ -1,9 +1,11 @@
-package org.pts.document.storage.model;
+package org.pts.document.storage.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.pts.document.storage.model.enums.OutboxJobStatus;
+import org.pts.document.storage.model.enums.OutboxJobType;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(name = "outbox")
@@ -17,18 +19,18 @@ public class OutboxJobEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(name = "type", unique = false, nullable = false)
-    private String type;
+    private OutboxJobType type;
     @Column(name = "status", unique = false, nullable = false)
-    private String status; //NEW | PROCESSING | DONE | FAILED
+    private OutboxJobStatus status; //NEW | PROCESSING | DONE | FAILED
     @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime createdAt;
+    private Instant createdAt;
     @Column(name = "updated_at", nullable = false, updatable = false)
-    private OffsetDateTime updateAt;
+    private Instant updateAt;
 
     @PrePersist
     protected void onCreate() {
-        createdAt = OffsetDateTime.now();
-        status = "NEW";
+        createdAt = Instant.now();
+        status = OutboxJobStatus.NEW;
         updateAt = createdAt;
     }
 }

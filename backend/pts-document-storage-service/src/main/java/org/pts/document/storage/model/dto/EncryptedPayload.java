@@ -1,4 +1,4 @@
-package org.pts.document.storage.dto;
+package org.pts.document.storage.model.dto;
 
 import lombok.Builder;
 

@@ -1,6 +1,6 @@
 package org.pts.document.storage.service.outbox;
 
-import org.pts.document.storage.model.OutboxJobEntity;
+import org.pts.document.storage.model.entity.OutboxJobEntity;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;

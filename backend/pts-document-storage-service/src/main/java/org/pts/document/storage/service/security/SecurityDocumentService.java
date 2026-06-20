@@ -1,6 +1,6 @@
 package org.pts.document.storage.service.security;
 
-import org.pts.document.storage.dto.EncryptedPayload;
+import org.pts.document.storage.model.dto.EncryptedPayload;
 import org.springframework.data.util.Pair;
 
 import javax.crypto.BadPaddingException;

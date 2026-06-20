@@ -1,9 +1,10 @@
-package org.pts.document.storage.model;
+package org.pts.document.storage.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.pts.document.storage.model.enums.DocumentStatus;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -28,26 +29,25 @@ public class DocumentEntity {
     @Column(name = "iv", columnDefinition = "bytea", unique = false, updatable = true, nullable = true)
     private byte[] iv;
     @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime createdAt;
+    private Instant createdAt;
     @Column(name = "updated_at", nullable = false, updatable = true)
-    private OffsetDateTime updateAt;
+    private Instant updateAt;
     @Column(name = "status", nullable = false, updatable = true, unique = false)
-    private String status;
+    private DocumentStatus status;
 
     @PrePersist
     protected void onCreate() {
         if (id == null) {
             id = UUID.randomUUID();
         }
-        createdAt = OffsetDateTime.now();
+        createdAt = Instant.now();
 
-        //TODO UPLOADING / UPLOADED / FAILED
-        status = "UPLOADING";
+        status = DocumentStatus.NEW;
         updateAt = createdAt;
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updateAt = OffsetDateTime.now();
+        updateAt = Instant.now();
     }
 }
