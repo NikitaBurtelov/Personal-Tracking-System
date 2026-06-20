@@ -10,7 +10,7 @@ import org.pts.document.storage.service.DocumentManagerService;
 import org.pts.document.storage.service.dto.UploadResult;
 import org.pts.document.storage.service.outbox.JobManagerService;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.List;
@@ -19,7 +19,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-@Service
+@Component
 @Slf4j
 @RequiredArgsConstructor
 public class DocumentWorker {
