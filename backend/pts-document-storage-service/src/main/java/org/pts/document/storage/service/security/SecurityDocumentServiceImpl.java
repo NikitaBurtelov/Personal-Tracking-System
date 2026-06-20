@@ -2,7 +2,6 @@ package org.pts.document.storage.service.security;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.pts.document.storage.config.security.SecurityProperties;
 import org.pts.document.storage.model.dto.EncryptedPayload;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
@@ -20,7 +19,7 @@ import java.security.SecureRandom;
 @Slf4j
 @RequiredArgsConstructor
 public class SecurityDocumentServiceImpl implements SecurityDocumentService {
-    private final SecurityProperties properties;
+    private final SecretKey masterKey;
 
     @Override
     public CipherInputStream decryptByStream(
@@ -102,8 +101,6 @@ public class SecurityDocumentServiceImpl implements SecurityDocumentService {
 //    }
 
     private byte[] encryptDataKey(SecretKey dataKey, byte[] iv) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-        var masterKey = properties.getMasterKey();
-
         Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
         cipher.init(
                 Cipher.ENCRYPT_MODE,
@@ -115,8 +112,6 @@ public class SecurityDocumentServiceImpl implements SecurityDocumentService {
     }
 
     private SecretKey decryptDataKey(byte[] dataKey, byte[] iv) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
-        var masterKey = properties.getMasterKey();
-
         Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
         cipher.init(
                 Cipher.DECRYPT_MODE,
