@@ -30,10 +30,11 @@ public class DocumentEntity {
     private byte[] iv;
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
-    @Column(name = "updated_at", nullable = false, updatable = true)
-    private Instant updateAt;
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, updatable = true, unique = false)
     private DocumentStatus status;
+    @Column(name = "updated_at", nullable = false, updatable = true)
+    private Instant updateAt;
 
     @PrePersist
     protected void onCreate() {

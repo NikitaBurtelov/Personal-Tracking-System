@@ -82,7 +82,7 @@ public class JobManagerServiceImpl implements JobManagerService {
             OutboxJobStatus status,
             int limit
     ) {
-        var jobs = outboxRepository.findAllByTypeAndStatus(type, status);
+        var jobs = outboxRepository.findAllByTypeAndStatus(type.getType(), status.getStatus());
 
         jobs.forEach(job -> job.setStatus(OutboxJobStatus.PROCESSING));
 

@@ -1,9 +1,33 @@
 databaseChangeLog:
 
   - changeSet:
-      id: 000-create-schema
+      id: 000-20-06-2026
       author: document-storage-service
       changes:
         - sqlFile:
             path: db/changelog/sql/000-create-schema.sql
+            relativeToChangelogFile: false
+
+  - changeSet:
+      id: 001-20-06-2026
+      author: document-storage-service
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/001-create_table_document.sql
+            relativeToChangelogFile: false
+
+  - changeSet:
+      id: 002-20-06-2026
+      author: document-storage-service
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/002-create-table-outbox.sql
+            relativeToChangelogFile: false
+
+  - changeSet:
+      id: 000-20-06-2026
+      author: document-storage-service
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/003-create-table-outbox-item.sql
             relativeToChangelogFile: false

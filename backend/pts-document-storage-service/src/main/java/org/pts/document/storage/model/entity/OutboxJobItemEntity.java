@@ -1,9 +1,6 @@
 package org.pts.document.storage.model.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 import org.pts.document.storage.model.enums.OutboxJobStatus;
 
@@ -23,6 +20,7 @@ public class OutboxJobItemEntity {
     private Long jobId;
     @Column(name = "document_id")
     private UUID documentId;
+    @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private OutboxJobStatus status; // NEW, PROCESSING, DONE, FAILED
+    private OutboxJobStatus status;
 }

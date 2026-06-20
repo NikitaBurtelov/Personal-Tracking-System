@@ -18,8 +18,10 @@ public class OutboxJobEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Enumerated(EnumType.STRING)
     @Column(name = "type", unique = false, nullable = false)
     private OutboxJobType type;
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", unique = false, nullable = false)
     private OutboxJobStatus status; //NEW | PROCESSING | DONE | FAILED
     @Column(name = "created_at", nullable = false, updatable = false)
