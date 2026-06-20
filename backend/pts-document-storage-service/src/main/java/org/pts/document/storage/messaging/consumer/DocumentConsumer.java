@@ -21,12 +21,12 @@ import java.io.IOException;
 public class DocumentConsumer {
     private final JobManagerService jobManagerService;
 
-    @RabbitListener(queues = "${rabbit.get-document-source-command-queue.name}")
+    @RabbitListener(queues = "document-storage.request.get.queue")
     public void getDocumentSource(GetDocumentSourceRequest message) {
         log.info("message={}", message);
     }
 
-    @RabbitListener(queues = "${rabbit.upload-document-source-command-queue.name}")
+    @RabbitListener(queues = "document-storage.command.upload.queue")
     public void uploadDocumentSource(
             UploadDocumentCommand message,
             Channel channel,
@@ -43,7 +43,7 @@ public class DocumentConsumer {
         }
     }
 
-    @RabbitListener(queues = "${rabbit.delete-document-source-command-queue.name}")
+    @RabbitListener(queues = "document-storage.command.delete.queue")
     public void deleteDocument(DeleteDocumentCommand message) {
         log.info("message={}", message);
     }
