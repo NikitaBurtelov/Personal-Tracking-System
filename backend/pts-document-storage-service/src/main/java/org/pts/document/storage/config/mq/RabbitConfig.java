@@ -14,6 +14,7 @@ import org.springframework.amqp.support.converter.JacksonJavaTypeMapper;
 import org.springframework.amqp.support.converter.JacksonJsonMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.json.JsonMapper;
 
 @EnableRabbit
@@ -70,18 +71,13 @@ public class RabbitConfig {
     public JsonMapper jsonMapper() {
         return JsonMapper.builder()
                 .findAndAddModules()
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
                 .build();
     }
 
     @Bean
-    public JacksonJsonMessageConverter messageConverter(JsonMapper jsonMapper,
-                                                        JacksonJavaTypeMapper typeMapper) {
-
-        var converter = new JacksonJsonMessageConverter(jsonMapper);
-
-        converter.setJavaTypeMapper(typeMapper);
-
-        return converter;
+    public JacksonJsonMessageConverter messageConverter(JsonMapper jsonMapper) {
+        return new JacksonJsonMessageConverter(jsonMapper);
     }
 
     @Bean
@@ -96,15 +92,6 @@ public class RabbitConfig {
         factory.setMessageConverter(converter);
 
         return factory;
-    }
-
-    @Bean
-    public JacksonJavaTypeMapper typeMapper() {
-        DefaultJacksonJavaTypeMapper typeMapper = new DefaultJacksonJavaTypeMapper();
-
-        typeMapper.setTrustedPackages("org.pts.document.storage.messaging.command.*");
-
-        return typeMapper;
     }
 
     @Bean
