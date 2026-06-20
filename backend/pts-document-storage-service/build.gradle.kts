@@ -19,8 +19,6 @@ dependencies {
 
     implementation(libs.infra.liquibase)
 
-    implementation(libs.util.bucket4j.core)
-    implementation(libs.util.bucket4j.lettuce)
     implementation(libs.util.lombok)
     compileOnly(libs.util.lombok)
     annotationProcessor(libs.util.lombok)
