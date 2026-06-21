@@ -55,6 +55,5 @@ amplicode.xml
 
 ### env
 .env
-infra/local
 infra/prod
 /.vscode/
