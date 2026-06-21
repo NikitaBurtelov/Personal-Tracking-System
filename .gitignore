@@ -56,4 +56,6 @@ amplicode.xml
 ### env
 .env
 infra/prod
+infra/local/data
+infra/local/minio_data
 /.vscode/
