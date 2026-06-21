@@ -56,6 +56,6 @@ amplicode.xml
 ### env
 .env
 infra/prod
-infra/local/data
-infra/local/minio_data
+infra/local/pts-docker/data
+infra/local/pts-docker/minio_data
 /.vscode/
