@@ -10,10 +10,7 @@ import javax.crypto.*;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.InputStream;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
+import java.security.*;
 
 @Service
 @Slf4j
@@ -43,7 +40,7 @@ public class SecurityDocumentServiceImpl implements SecurityDocumentService {
     @Override
     public Pair<CipherInputStream, EncryptedPayload> encryptByStream(
             InputStream objectStream
-    ) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
+    ) throws Exception {
         var keyGenerator = KeyGenerator.getInstance("AES");
         keyGenerator.init(256);
 
@@ -72,36 +69,8 @@ public class SecurityDocumentServiceImpl implements SecurityDocumentService {
         );
     }
 
-//    @Override
-//    public EncryptedPayload encrypt(byte[] data) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-//        var keyGenerator = KeyGenerator.getInstance("AES");
-//        keyGenerator.init(256);
-//
-//        var secretKey = keyGenerator.generateKey();
-//
-//        var iv = new byte[12];
-//        SecureRandom.getInstanceStrong().nextBytes(iv);
-//
-//        var cipher = Cipher.getInstance("AES/GCM/NoPadding");
-//
-//        cipher.init(
-//                Cipher.ENCRYPT_MODE,
-//                secretKey,
-//                new GCMParameterSpec(128, iv)
-//        );
-//
-//        var encryptedData = cipher.doFinal(data);
-//        var encryptDataKey = encryptDataKey(secretKey);
-//
-//        return EncryptedPayload.builder()
-//                .encryptedDataKey(encryptDataKey)
-//                .encryptedData(encryptedData)
-//                .iv(iv)
-//                .build();
-//    }
-
     private byte[] encryptDataKey(SecretKey dataKey, byte[] iv) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-        Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         cipher.init(
                 Cipher.ENCRYPT_MODE,
                 masterKey,

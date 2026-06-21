@@ -22,6 +22,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -83,23 +84,23 @@ public class DocumentServiceImpl implements DocumentService {
     public String upload(UUID id) throws Exception {
         var document = documentRepositoryService.get(id);
 
-        var key = document.getTempKey();
-        var bucket = document.getTempBucket();
+        var tempKey = document.getTempKey();
+        var tempBucket = document.getTempBucket();
 
         var getObjectRequest = GetObjectRequest.builder()
-                .bucket(bucket)
-                .key(key)
+                .bucket(tempBucket)
+                .key(tempKey)
                 .build();
         var getHeadObjectRequest = HeadObjectRequest.builder()
-                .bucket(bucket)
-                .key(key)
+                .bucket(tempBucket)
+                .key(tempKey)
                 .build();
 
         var headObject = storageService.getHeadObject(getHeadObjectRequest);
         var metadata = headObject.metadata();
-
-        var originalFileName = metadata.get("original-file-name");
         var contentType = headObject.contentType();
+        var originalFileName =  Optional.ofNullable(metadata.get("original-file-name"))
+                .orElse(contentType.replace("/", "."));
 
         var s3ObjectStream = storageService.getObjectStream(getObjectRequest);
 
@@ -109,38 +110,41 @@ public class DocumentServiceImpl implements DocumentService {
         var encrypts3ObjectStream = encryptStreamPair.getFirst();
         var encryptedPayload = encryptStreamPair.getSecond();
 
-        var documentEntity = DocumentEntity.builder()
-                .id(id)
-                .key(key)
-                .encryptedFileKey(encryptedPayload.encryptedDataKey())
-                .iv(encryptedPayload.iv())
-                .status(DocumentStatus.UPLOADING)
-                .build();
+        var persistenceBucket = minIOProperties.getDocumentPersistenceBucket().getBucketName();
+        var persistenceKey = UUID.randomUUID() + originalFileName;
+
+        document.setKey(persistenceKey);
+        document.setEncryptedFileKey(encryptedPayload.encryptedDataKey());
+        document.setIv(encryptedPayload.iv());
+        document.setStatus(DocumentStatus.UPLOADING);
 
         documentRepositoryService.save(
-                documentEntity
+                document
         );
 
         try (s3ObjectStream; encrypts3ObjectStream) {
             storageService.putObject(
                     PutObjectRequest.builder()
-                            .bucket(minIOProperties.getDocumentPersistenceBucket().getBucketName())
-                            .key(key)
+                            .bucket(persistenceBucket)
+                            .key(persistenceKey)
                             .metadata(Map.of(
-                                    "original-content-type", contentType,
-                                    "original-key", key,
-                                    "original-file-name", originalFileName,
+                                    "original-content-type", contentType != null ? contentType : "",
+                                    "original-tempKey", tempKey != null ? tempKey : "",
+                                    "original-file-name", originalFileName != null ? originalFileName : "",
                                     "iv", encode(encryptedPayload.iv()),
-                                    "encrypted-data-key", encode(encryptedPayload.encryptedDataKey())
+                                    "encrypted-data-tempKey", encode(encryptedPayload.encryptedDataKey())
                             ))
                             .contentType("application/octet-stream")
                             .build(),
-                    RequestBody.fromInputStream(encrypts3ObjectStream, -1)
+                    RequestBody.fromContentProvider(
+                            () -> encrypts3ObjectStream,
+                            "application/octet-stream"
+                    )
             );
 
             documentRepositoryService.updateStatus(id, DocumentStatus.UPLOADED);
 
-            return key;
+            return persistenceKey;
         } catch (Exception e) {
             documentRepositoryService.updateStatus(id, DocumentStatus.FAILED);
             throw new RuntimeException(e);

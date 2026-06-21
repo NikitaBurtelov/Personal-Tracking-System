@@ -21,5 +21,5 @@ public interface SecurityDocumentService {
 
     Pair<CipherInputStream, EncryptedPayload> encryptByStream(
             InputStream objectStream
-    ) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException;
+    ) throws Exception;
 }

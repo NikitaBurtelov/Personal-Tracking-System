@@ -31,3 +31,11 @@ databaseChangeLog:
         - sqlFile:
             path: db/changelog/sql/003-create-table-outbox-item.sql
             relativeToChangelogFile: false
+
+  - changeSet:
+      id: 004-21-06-2026
+      author: document-storage-service
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/004-update-table-outbox-item.sql
+            relativeToChangelogFile: false

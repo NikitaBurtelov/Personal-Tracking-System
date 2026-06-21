@@ -28,17 +28,13 @@ public class DocumentConsumer {
 
     @RabbitListener(queues = "${rabbit.upload-document-source-command-queue.name}")
     public void uploadDocumentSource(
-            UploadDocumentCommand message,
-            Channel channel,
-            @Header(AmqpHeaders.DELIVERY_TAG) long tag
+            UploadDocumentCommand message
     ) throws IOException {
         try {
 
             jobManagerService.createUploadDocumentJob(message);
 
-            channel.basicAck(tag, false);
         } catch (Exception e) {
-            channel.basicNack(tag, false, true);
             throw new RuntimeException(e);
         }
     }
