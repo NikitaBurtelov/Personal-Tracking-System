@@ -9,5 +9,5 @@ import java.util.UUID;
 public interface DocumentManagerService {
     List<UploadResult> uploadDocumentAsync(List<UUID> documentsId);
 
-    List<String> getDocumentAsync(List<UploadDocumentCommand.PayloadDocumentsUpload.Document> documents);
+    List<UploadResult> getDocumentAsync(List<UUID> documentsId);
 }

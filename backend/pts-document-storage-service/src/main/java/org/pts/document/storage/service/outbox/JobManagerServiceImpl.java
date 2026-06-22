@@ -3,6 +3,7 @@ package org.pts.document.storage.service.outbox;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.pts.document.storage.messaging.command.UploadDocumentCommand;
+import org.pts.document.storage.messaging.dto.GetDocumentSourceRequest;
 import org.pts.document.storage.model.entity.DocumentEntity;
 import org.pts.document.storage.model.entity.OutboxJobEntity;
 import org.pts.document.storage.model.entity.OutboxJobItemEntity;
@@ -15,10 +16,7 @@ import org.pts.document.storage.repository.OutboxRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -29,6 +27,37 @@ public class JobManagerServiceImpl implements JobManagerService {
     private final DocumentRepository documentRepository;
     private final OutboxRepository outboxRepository;
     private final OutboxItemRepository outboxItemRepository;
+
+    @Transactional
+    @Override
+    public void createGetDocumentJob(GetDocumentSourceRequest msg) {
+        var batches = chunk(msg.s3Keys(), 10);
+
+        for (var batch : batches) {
+            var batchDocuments = documentRepository.findAllByKeyIn(batch);
+
+            var job = OutboxJobEntity.builder()
+                    .type(OutboxJobType.GET)
+                    .status(OutboxJobStatus.NEW)
+                    .build();
+
+            job = outboxRepository.save(job);
+
+            List<OutboxJobItemEntity> items = new ArrayList<>(Collections.emptyList());
+
+            for (var batchDocument : batchDocuments) {
+                var jobItem = OutboxJobItemEntity.builder()
+                        .jobId(job.getId())
+                        .documentId(batchDocument.getId())
+                        .status(OutboxJobStatus.NEW)
+                        .build();
+
+                items.add(jobItem);
+            }
+
+            outboxItemRepository.saveAll(items);
+        }
+    }
 
     @Transactional
     @Override

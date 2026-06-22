@@ -40,14 +40,13 @@ public class DocumentWorker {
 
     @Scheduled(fixedDelay = 1000)
     public void uploadDocumentProcess() {
-
         if (!uploadDocumentJobSemaphore.tryAcquire()) {
             return;
         }
 
         uploadDocumentExecutor.execute(() -> {
             try {
-                uploadDocumentExecutor.execute(this::uploadProcessing);
+                uploadProcessing();
             } finally {
                 uploadDocumentJobSemaphore.release();
             }
@@ -63,7 +62,7 @@ public class DocumentWorker {
 
         getDocumentExecutor.execute(() -> {
             try {
-                return;
+                getDocumentProcessing();
             } finally {
                 getDocumentJobSemaphore.release();
             }
@@ -71,7 +70,7 @@ public class DocumentWorker {
     }
 
     @Scheduled(fixedDelay = 10000)
-    public void joProcess() {
+    public void jobProcess() {
 
         if (!updateJobStatusSemaphore.tryAcquire()) {
             return;
@@ -105,6 +104,34 @@ public class DocumentWorker {
                         );
 
                 var results = documentManagerService.uploadDocumentAsync(docs);
+
+                identifyAndUpdateStatus(job, itemsDocsMap, results);
+
+            } catch (Exception e) {
+                markFailed(job, items);
+            }
+        });
+    }
+
+    private void getDocumentProcessing() {
+        var jobs = jobManagerService.takeForProcessing(
+                OutboxJobType.GET,
+                OutboxJobStatus.NEW,
+                10
+        );
+
+        jobs.forEach((job, items) -> {
+            try {
+                var docs = items.stream().map(OutboxJobItemEntity::getDocumentId).toList();
+
+                var itemsDocsMap = items.stream()
+                        .collect(
+                                Collectors.toMap(
+                                        OutboxJobItemEntity::getDocumentId,
+                                        item -> item)
+                        );
+
+                var results = documentManagerService.getDocumentAsync(docs);
 
                 identifyAndUpdateStatus(job, itemsDocsMap, results);
 

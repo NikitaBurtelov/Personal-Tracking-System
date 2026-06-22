@@ -3,7 +3,6 @@ package org.pts.document.storage.service;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.pts.document.storage.messaging.command.UploadDocumentCommand;
 import org.pts.document.storage.service.document.DocumentService;
 import org.pts.document.storage.service.dto.UploadResult;
 import org.springframework.stereotype.Service;
@@ -44,7 +43,7 @@ public class DocumentManagerServiceImpl implements DocumentManagerService {
                         )
                 ).toList();
 
-        var results = CompletableFuture
+        return CompletableFuture
                 .allOf(futures.toArray(new CompletableFuture[0]))
                 .thenApply(v ->
                         futures.stream()
@@ -52,25 +51,32 @@ public class DocumentManagerServiceImpl implements DocumentManagerService {
                                 .toList()
                 )
                 .join();
-
-        return results;
     }
 
     @Override
-    public List<String> getDocumentAsync(List<UploadDocumentCommand.PayloadDocumentsUpload.Document> documents) {
-        List<CompletableFuture<String>> futures = documents.stream()
-                .map(doc ->
+    public List<UploadResult> getDocumentAsync(List<UUID> documentsId) {
+        List<CompletableFuture<UploadResult>> futures = documentsId.stream()
+                .map(docId ->
                         CompletableFuture.supplyAsync(() -> {
                                     try {
-                                        return documentService.getDocument(doc.s3TempKey(), doc.bucket());
+                                        var result = documentService.getDocument(docId);
+                                        return new UploadResult(
+                                                docId,
+                                                result,
+                                                "Upload is done"
+                                        );
                                     } catch (Exception e) {
-                                        throw new RuntimeException();
+                                        return new UploadResult(
+                                                docId,
+                                                null,
+                                                "Upload is failed" + e.getMessage()
+                                        );
                                     }
                                 }, executorService
                         )
                 ).toList();
 
-        var results = CompletableFuture
+        return CompletableFuture
                 .allOf(futures.toArray(new CompletableFuture[0]))
                 .thenApply(v ->
                         futures.stream()
@@ -78,8 +84,6 @@ public class DocumentManagerServiceImpl implements DocumentManagerService {
                                 .toList()
                 )
                 .join();
-
-        return results;
     }
 
     @PreDestroy

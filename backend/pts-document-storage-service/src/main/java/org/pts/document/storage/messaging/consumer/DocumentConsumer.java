@@ -21,6 +21,8 @@ public class DocumentConsumer {
     @RabbitListener(queues = "${rabbit.get-document-source-request-queue.name}")
     public void getDocumentSource(GetDocumentSourceRequest message) {
         log.info("message={}", message);
+
+        jobManagerService.createGetDocumentJob(message);
     }
 
     @RabbitListener(queues = "${rabbit.upload-document-source-command-queue.name}")

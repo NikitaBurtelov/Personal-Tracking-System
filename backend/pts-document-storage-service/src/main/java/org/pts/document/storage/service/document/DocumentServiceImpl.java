@@ -3,6 +3,7 @@ package org.pts.document.storage.service.document;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.pts.document.storage.config.minio.MinIOProperties;
+import org.pts.document.storage.model.entity.DocumentEntity;
 import org.pts.document.storage.model.enums.DocumentStatus;
 import org.pts.document.storage.service.security.SecurityDocumentService;
 import org.pts.document.storage.service.storage.StorageService;
@@ -34,13 +35,17 @@ public class DocumentServiceImpl implements DocumentService {
     private final MinIOProperties minIOProperties;
 
     @Override
-    public String getDocument(String key, String bucket) throws IOException, InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+    public String getDocument(UUID docId) throws IOException, InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+        DocumentEntity document = documentRepositoryService.get(docId);
+        var key = document.getKey();
+        var bucket = minIOProperties.getDocumentPersistenceBucket();
+
         var getObjectRequest = GetObjectRequest.builder()
-                .bucket(bucket)
+                .bucket(bucket.getBucketName())
                 .key(key)
                 .build();
         var getHeadObjectRequest = HeadObjectRequest.builder()
-                .bucket(bucket)
+                .bucket(bucket.getBucketName())
                 .key(key)
                 .build();
 
@@ -49,8 +54,8 @@ public class DocumentServiceImpl implements DocumentService {
 
         var originalFileName = metadata.get("original-file-name");
         var originalContentType = metadata.get("original-content-type");
-        var encryptedDataKey = decode(metadata.get("encrypted-data-key"));
-        var iv = decode(metadata.get("iv"));
+        var encryptedDataKey = document.getEncryptedFileKey();
+        var iv = document.getIv();
 
         var s3ObjectStream = storageService.getObjectStream(getObjectRequest);
 
@@ -61,18 +66,21 @@ public class DocumentServiceImpl implements DocumentService {
         );
 
         try (s3ObjectStream; decryptS3ObjectStream) {
-            var decryptS3ObjectKey = UUID.randomUUID() + originalFileName;
+            var tempKey = UUID.randomUUID() + originalFileName;
 
             storageService.putObject(
                     PutObjectRequest.builder()
                             .bucket(minIOProperties.getDocumentTempBucket().getBucketName())
-                            .key(decryptS3ObjectKey)
+                            .key(tempKey)
                             .contentType(originalContentType)
                             .build(),
-                    RequestBody.fromInputStream(decryptS3ObjectStream, -1)
+                    RequestBody.fromContentProvider(
+                            () -> decryptS3ObjectStream,
+                            "application/octet-stream"
+                    )
             );
 
-            return decryptS3ObjectKey;
+            return tempKey;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

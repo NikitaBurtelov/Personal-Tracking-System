@@ -84,7 +84,7 @@ public class SecurityDocumentServiceImpl implements SecurityDocumentService {
     }
 
     private SecretKey decryptDataKey(byte[] dataKey, byte[] iv) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
-        Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         cipher.init(
                 Cipher.DECRYPT_MODE,
                 masterKey,

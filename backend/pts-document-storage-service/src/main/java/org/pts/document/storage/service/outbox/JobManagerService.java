@@ -1,6 +1,7 @@
 package org.pts.document.storage.service.outbox;
 
 import org.pts.document.storage.messaging.command.UploadDocumentCommand;
+import org.pts.document.storage.messaging.dto.GetDocumentSourceRequest;
 import org.pts.document.storage.model.entity.OutboxJobEntity;
 import org.pts.document.storage.model.entity.OutboxJobItemEntity;
 import org.pts.document.storage.model.enums.OutboxJobStatus;
@@ -11,6 +12,9 @@ import java.util.List;
 import java.util.Map;
 
 public interface JobManagerService {
+    @Transactional
+    void createGetDocumentJob(GetDocumentSourceRequest msg);
+
     @Transactional
     void createUploadDocumentJob(UploadDocumentCommand msg);
 
