@@ -17,11 +17,12 @@ public interface OutboxRepository extends JpaRepository<OutboxJobEntity, Long> {
               AND status = :status
             ORDER BY id
             FOR UPDATE SKIP LOCKED
-            LIMIT 100
+            LIMIT :limit
             """, nativeQuery = true)
     List<OutboxJobEntity> findAllByTypeAndStatus(
             @Param("type") String type,
-            @Param("status") String status
+            @Param("status") String status,
+            @Param("limit") int limit
     );
 
     @Modifying

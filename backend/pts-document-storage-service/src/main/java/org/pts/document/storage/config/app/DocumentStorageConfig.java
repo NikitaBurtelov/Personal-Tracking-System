@@ -14,10 +14,9 @@ public class DocumentStorageConfig {
 
     @Bean
     public ExecutorService executorService() {
-
         return new ThreadPoolExecutor(
-                10,
-                10,
+                5,
+                5,
                 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<>(100),
                 new ThreadFactory() {
@@ -25,7 +24,7 @@ public class DocumentStorageConfig {
 
                     @Override
                     public Thread newThread(@NonNull Runnable r) {
-                        return new Thread(r, "upload-" + counter.incrementAndGet());
+                        return new Thread(r, "documents-" + counter.incrementAndGet());
                     }
                 },
                 new ThreadPoolExecutor.CallerRunsPolicy()

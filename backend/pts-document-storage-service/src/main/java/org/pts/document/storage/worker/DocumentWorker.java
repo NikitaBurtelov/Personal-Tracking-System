@@ -10,12 +10,15 @@ import org.pts.document.storage.service.DocumentManagerService;
 import org.pts.document.storage.service.dto.UploadResult;
 import org.pts.document.storage.service.outbox.JobManagerService;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -26,13 +29,68 @@ public class DocumentWorker {
     private final DocumentManagerService documentManagerService;
     private final JobManagerService jobManagerService;
 
-    @Scheduled(fixedDelay = 3000)
-    public void process() {
+    private final ThreadPoolTaskExecutor uploadDocumentExecutor;
+    private final ThreadPoolTaskExecutor getDocumentExecutor;
+    private final Executor taskExecutor; // virtual thread
 
+    private final Semaphore uploadDocumentJobSemaphore;
+    private final Semaphore deleteDocumentJobSemaphore;
+    private final Semaphore getDocumentJobSemaphore;
+    private final Semaphore updateJobStatusSemaphore;
+
+    @Scheduled(fixedDelay = 1000)
+    public void uploadDocumentProcess() {
+
+        if (!uploadDocumentJobSemaphore.tryAcquire()) {
+            return;
+        }
+
+        uploadDocumentExecutor.execute(() -> {
+            try {
+                uploadDocumentExecutor.execute(this::uploadProcessing);
+            } finally {
+                uploadDocumentJobSemaphore.release();
+            }
+        });
+    }
+
+    @Scheduled(fixedDelay = 2000)
+    public void getDocumentProcess() {
+
+        if (!getDocumentJobSemaphore.tryAcquire()) {
+            return;
+        }
+
+        getDocumentExecutor.execute(() -> {
+            try {
+                return;
+            } finally {
+                getDocumentJobSemaphore.release();
+            }
+        });
+    }
+
+    @Scheduled(fixedDelay = 10000)
+    public void joProcess() {
+
+        if (!updateJobStatusSemaphore.tryAcquire()) {
+            return;
+        }
+
+        taskExecutor.execute(() -> {
+            try {
+                return;
+            } finally {
+                updateJobStatusSemaphore.release();
+            }
+        });
+    }
+
+    private void uploadProcessing() {
         var jobs = jobManagerService.takeForProcessing(
                 OutboxJobType.UPLOAD,
                 OutboxJobStatus.NEW,
-                100
+                10
         );
 
         jobs.forEach((job, items) -> {

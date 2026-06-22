@@ -1,5 +1,6 @@
 package org.pts.document.storage.service;
 
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.pts.document.storage.messaging.command.UploadDocumentCommand;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
@@ -78,5 +80,14 @@ public class DocumentManagerServiceImpl implements DocumentManagerService {
                 .join();
 
         return results;
+    }
+
+    @PreDestroy
+    public void shutdown() throws InterruptedException {
+        executorService.shutdown();
+
+        if (!executorService.awaitTermination(30, TimeUnit.SECONDS)) {
+            executorService.shutdownNow();
+        }
     }
 }

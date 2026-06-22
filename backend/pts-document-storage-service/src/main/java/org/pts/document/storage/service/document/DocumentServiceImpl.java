@@ -3,7 +3,6 @@ package org.pts.document.storage.service.document;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.pts.document.storage.config.minio.MinIOProperties;
-import org.pts.document.storage.model.entity.DocumentEntity;
 import org.pts.document.storage.model.enums.DocumentStatus;
 import org.pts.document.storage.service.security.SecurityDocumentService;
 import org.pts.document.storage.service.storage.StorageService;
@@ -99,7 +98,7 @@ public class DocumentServiceImpl implements DocumentService {
         var headObject = storageService.getHeadObject(getHeadObjectRequest);
         var metadata = headObject.metadata();
         var contentType = headObject.contentType();
-        var originalFileName =  Optional.ofNullable(metadata.get("original-file-name"))
+        var originalFileName = Optional.ofNullable(metadata.get("original-file-name"))
                 .orElse(contentType.replace("/", "."));
 
         var s3ObjectStream = storageService.getObjectStream(getObjectRequest);
