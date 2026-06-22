@@ -11,7 +11,7 @@ public enum OutboxJobStatus {
 
     private final String status;
 
-    private OutboxJobStatus(String status) {
+    OutboxJobStatus(String status) {
         this.status = status;
     }
 }

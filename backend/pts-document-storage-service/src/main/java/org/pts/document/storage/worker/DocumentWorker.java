@@ -29,26 +29,26 @@ public class DocumentWorker {
     private final DocumentManagerService documentManagerService;
     private final JobManagerService jobManagerService;
 
-    private final ThreadPoolTaskExecutor uploadDocumentExecutor;
-    private final ThreadPoolTaskExecutor getDocumentExecutor;
-    private final Executor taskExecutor; // virtual thread
+    private final ThreadPoolTaskExecutor uploadDocumentProcessExecutor;
+    private final ThreadPoolTaskExecutor getDocumentProcessExecutor;
+    private final Executor taskProcessExecutor; // virtual thread
 
-    private final Semaphore uploadDocumentJobSemaphore;
-    private final Semaphore deleteDocumentJobSemaphore;
-    private final Semaphore getDocumentJobSemaphore;
-    private final Semaphore updateJobStatusSemaphore;
+    private final Semaphore uploadDocumentProcessSemaphore;
+    private final Semaphore deleteDocumentProcessSemaphore;
+    private final Semaphore getDocumentProcessSemaphore;
+    private final Semaphore updateJobStatusProcessSemaphore;
 
     @Scheduled(fixedDelay = 1000)
     public void uploadDocumentProcess() {
-        if (!uploadDocumentJobSemaphore.tryAcquire()) {
+        if (!uploadDocumentProcessSemaphore.tryAcquire()) {
             return;
         }
 
-        uploadDocumentExecutor.execute(() -> {
+        uploadDocumentProcessExecutor.execute(() -> {
             try {
                 uploadProcessing();
             } finally {
-                uploadDocumentJobSemaphore.release();
+                uploadDocumentProcessSemaphore.release();
             }
         });
     }
@@ -56,15 +56,15 @@ public class DocumentWorker {
     @Scheduled(fixedDelay = 2000)
     public void getDocumentProcess() {
 
-        if (!getDocumentJobSemaphore.tryAcquire()) {
+        if (!getDocumentProcessSemaphore.tryAcquire()) {
             return;
         }
 
-        getDocumentExecutor.execute(() -> {
+        getDocumentProcessExecutor.execute(() -> {
             try {
                 getDocumentProcessing();
             } finally {
-                getDocumentJobSemaphore.release();
+                getDocumentProcessSemaphore.release();
             }
         });
     }
@@ -72,15 +72,14 @@ public class DocumentWorker {
     @Scheduled(fixedDelay = 10000)
     public void jobProcess() {
 
-        if (!updateJobStatusSemaphore.tryAcquire()) {
+        if (!updateJobStatusProcessSemaphore.tryAcquire()) {
             return;
         }
 
-        taskExecutor.execute(() -> {
+        taskProcessExecutor.execute(() -> {
             try {
-                return;
             } finally {
-                updateJobStatusSemaphore.release();
+                updateJobStatusProcessSemaphore.release();
             }
         });
     }
@@ -146,7 +145,7 @@ public class DocumentWorker {
             Map<UUID, OutboxJobItemEntity> itemsDocsMap,
             List<UploadResult> results
     ) {
-        Map<Long, OutboxJobStatus> itemsStatusMap = Collections.emptyMap();
+        Map<Long, OutboxJobStatus> itemsStatusMap = new java.util.HashMap<>(Collections.emptyMap());
         AtomicReference<OutboxJobStatus> jobStatus = new AtomicReference<>(OutboxJobStatus.DONE);
 
         results.forEach(result -> {

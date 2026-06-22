@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class DocumentManagerServiceImpl implements DocumentManagerService {
     private final DocumentService documentService;
-    private final ExecutorService executorService;
+    private final ExecutorService documentExecutorService;
 
     @Override
     public List<UploadResult> uploadDocumentAsync(List<UUID> documentsId) {
@@ -39,7 +39,7 @@ public class DocumentManagerServiceImpl implements DocumentManagerService {
                                                 "Upload is failed" + e.getMessage()
                                         );
                                     }
-                                }, executorService
+                                }, documentExecutorService
                         )
                 ).toList();
 
@@ -72,7 +72,7 @@ public class DocumentManagerServiceImpl implements DocumentManagerService {
                                                 "Upload is failed" + e.getMessage()
                                         );
                                     }
-                                }, executorService
+                                }, documentExecutorService
                         )
                 ).toList();
 
@@ -88,10 +88,10 @@ public class DocumentManagerServiceImpl implements DocumentManagerService {
 
     @PreDestroy
     public void shutdown() throws InterruptedException {
-        executorService.shutdown();
+        documentExecutorService.shutdown();
 
-        if (!executorService.awaitTermination(30, TimeUnit.SECONDS)) {
-            executorService.shutdownNow();
+        if (!documentExecutorService.awaitTermination(30, TimeUnit.SECONDS)) {
+            documentExecutorService.shutdownNow();
         }
     }
 }

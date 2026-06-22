@@ -9,7 +9,7 @@ public enum OutboxJobType {
 
     private final String type;
 
-    private OutboxJobType(String type) {
+    OutboxJobType(String type) {
         this.type = type;
     }
 }

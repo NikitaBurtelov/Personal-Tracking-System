@@ -7,4 +7,5 @@ public record GetDocumentSourceResponse(
         UUID workId,
         String bucket,
         List<String> temps3Keys
-) { }
+) {
+}

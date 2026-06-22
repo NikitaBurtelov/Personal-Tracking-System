@@ -1,5 +1,7 @@
 package org.pts.document.storage.config.app;
 
+import lombok.RequiredArgsConstructor;
+import org.pts.document.storage.config.app.properties.DocumentStorageApplicationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.TaskScheduler;
@@ -14,26 +16,28 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 @Configuration
 @EnableScheduling
+@RequiredArgsConstructor
 public class SchedulerConfig {
+    private final DocumentStorageApplicationProperties properties;
 
     @Bean
-    public Semaphore uploadDocumentJobSemaphore() {
-        return new Semaphore(2);
+    public Semaphore uploadDocumentProcessSemaphore() {
+        return new Semaphore(properties.getUploadDocumentProcessSemaphoreSettings().getPermits());
     }
 
     @Bean
-    public Semaphore deleteDocumentJobSemaphore() {
-        return new Semaphore(1);
+    public Semaphore deleteDocumentProcessSemaphore() {
+        return new Semaphore(properties.getDeleteDocumentProcessSemaphoreSettings().getPermits());
     }
 
     @Bean
-    public Semaphore getDocumentJobSemaphore() {
-        return new Semaphore(5);
+    public Semaphore getDocumentProcessSemaphore() {
+        return new Semaphore(properties.getGetDocumentProcessSemaphoreSettings().getPermits());
     }
 
     @Bean
-    public Semaphore updateJobStatusSemaphore() {
-        return new Semaphore(1);
+    public Semaphore updateJobStatusProcessSemaphore() {
+        return new Semaphore(properties.getUpdateJobStatusProcessSemaphoreSettings().getPermits());
     }
 
     @Bean
@@ -45,13 +49,15 @@ public class SchedulerConfig {
     }
 
     @Bean
-    public ThreadPoolTaskExecutor uploadDocumentExecutor() {
+    public ThreadPoolTaskExecutor uploadDocumentProcessExecutor() {
+        var executorSettings = properties.getUploadDocumentProcessExecutorSettings();
+
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
 
-        executor.setCorePoolSize(2);
-        executor.setMaxPoolSize(4);
+        executor.setCorePoolSize(executorSettings.getCorePoolSize());
+        executor.setMaxPoolSize(executorSettings.getMaxPoolSize());
 
-        executor.setQueueCapacity(100);
+        executor.setQueueCapacity(executorSettings.getQueueCapacity());
 
         executor.setThreadNamePrefix("upload-");
 
@@ -62,13 +68,15 @@ public class SchedulerConfig {
     }
 
     @Bean
-    public ThreadPoolTaskExecutor getDocumentExecutor() {
+    public ThreadPoolTaskExecutor getDocumentProcessExecutor() {
+        var executorSettings = properties.getGetDocumentProcessExecutorSettings();
+
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
 
-        executor.setCorePoolSize(4);
-        executor.setMaxPoolSize(8);
+        executor.setCorePoolSize(executorSettings.getCorePoolSize());
+        executor.setMaxPoolSize(executorSettings.getMaxPoolSize());
 
-        executor.setQueueCapacity(50);
+        executor.setQueueCapacity(executorSettings.getQueueCapacity());
 
         executor.setThreadNamePrefix("get-");
 
@@ -79,7 +87,7 @@ public class SchedulerConfig {
     }
 
     @Bean
-    public Executor taskExecutor() {
+    public Executor taskProcessExecutor() {
         return Executors.newVirtualThreadPerTaskExecutor();
     }
 }

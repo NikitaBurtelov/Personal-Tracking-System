@@ -86,7 +86,6 @@ public class DocumentServiceImpl implements DocumentService {
         }
     }
 
-
     @Override
     public String upload(UUID id) throws Exception {
         var document = documentRepositoryService.get(id);

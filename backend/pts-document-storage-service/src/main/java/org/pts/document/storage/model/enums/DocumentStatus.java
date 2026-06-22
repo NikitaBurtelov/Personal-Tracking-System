@@ -11,7 +11,7 @@ public enum DocumentStatus {
 
     private final String status;
 
-    private DocumentStatus(String status) {
+    DocumentStatus(String status) {
         this.status = status;
     }
 }

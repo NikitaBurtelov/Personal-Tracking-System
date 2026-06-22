@@ -8,7 +8,6 @@ group = "${rootProject.group}.document.storage"
 version = rootProject.version
 
 dependencies {
-    implementation(libs.spring.web)
     implementation(libs.spring.amqp)
     implementation(libs.spring.doc)
     implementation(libs.spring.actuator)
@@ -19,7 +18,7 @@ dependencies {
 
     implementation(libs.infra.liquibase)
 
-    implementation(libs.util.lombok)
+    implementation(libs.util.jackson)
     compileOnly(libs.util.lombok)
     annotationProcessor(libs.util.lombok)
 

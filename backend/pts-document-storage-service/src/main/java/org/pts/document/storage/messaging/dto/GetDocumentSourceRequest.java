@@ -6,5 +6,6 @@ import java.util.UUID;
 public record GetDocumentSourceRequest(
         UUID workId,
         List<String> s3Keys
-) { }
+) {
+}
 
