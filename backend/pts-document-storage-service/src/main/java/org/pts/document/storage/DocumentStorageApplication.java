@@ -1,6 +1,6 @@
 package org.pts.document.storage;
 
-import org.pts.document.storage.config.properties.DotenvPropertySourceInitializer;
+import org.pts.document.storage.config.util.DotenvPropertySourceInitializer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;

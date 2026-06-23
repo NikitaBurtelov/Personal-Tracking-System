@@ -1,0 +1,198 @@
+package org.pts.document.storage.service.outbox;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.pts.document.storage.messaging.command.UploadDocumentCommand;
+import org.pts.document.storage.messaging.dto.GetDocumentSourceRequest;
+import org.pts.document.storage.model.entity.DocumentEntity;
+import org.pts.document.storage.model.entity.OutboxJobEntity;
+import org.pts.document.storage.model.entity.OutboxJobItemEntity;
+import org.pts.document.storage.model.enums.DocumentStatus;
+import org.pts.document.storage.model.enums.OutboxJobStatus;
+import org.pts.document.storage.model.enums.OutboxJobType;
+import org.pts.document.storage.repository.DocumentRepository;
+import org.pts.document.storage.repository.OutboxItemRepository;
+import org.pts.document.storage.repository.OutboxRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+@Service
+@Slf4j
+@RequiredArgsConstructor
+public class JobManagerServiceImpl implements JobManagerService {
+    private final DocumentRepository documentRepository;
+    private final OutboxRepository outboxRepository;
+    private final OutboxItemRepository outboxItemRepository;
+
+    @Transactional
+    @Override
+    public void createGetDocumentJob(GetDocumentSourceRequest msg) {
+        var batches = chunk(msg.s3Keys(), 10);
+
+        for (var batch : batches) {
+            var batchDocuments = documentRepository.findAllByKeyIn(batch);
+
+            var job = OutboxJobEntity.builder()
+                    .type(OutboxJobType.GET)
+                    .status(OutboxJobStatus.NEW)
+                    .build();
+
+            job = outboxRepository.save(job);
+
+            List<OutboxJobItemEntity> items = new ArrayList<>(Collections.emptyList());
+
+            for (var batchDocument : batchDocuments) {
+                var jobItem = OutboxJobItemEntity.builder()
+                        .jobId(job.getId())
+                        .documentId(batchDocument.getId())
+                        .status(OutboxJobStatus.NEW)
+                        .build();
+
+                items.add(jobItem);
+            }
+
+            outboxItemRepository.saveAll(items);
+        }
+    }
+
+    @Transactional
+    @Override
+    public void createUploadDocumentJob(UploadDocumentCommand msg) {
+        List<UploadDocumentCommand.PayloadDocumentsUpload.Document> docs = msg.payload().documents();
+
+        var batches = chunk(docs, 10);
+
+        var allDocuments = new ArrayList<DocumentEntity>();
+        var allJobItems = new ArrayList<OutboxJobItemEntity>();
+
+        for (List<UploadDocumentCommand.PayloadDocumentsUpload.Document> batch : batches) {
+
+            var job = OutboxJobEntity.builder()
+                    .type(OutboxJobType.UPLOAD)
+                    .status(OutboxJobStatus.NEW)
+                    .build();
+
+            job = outboxRepository.save(job);
+
+            for (var doc : batch) {
+
+                var documentId = UUID.randomUUID();
+
+                var document = DocumentEntity.builder()
+                        .id(documentId)
+                        .tempKey(doc.s3TempKey())
+                        .tempBucket(doc.bucket())
+                        .status(DocumentStatus.NEW)
+                        .build();
+
+                allDocuments.add(document);
+
+                var jobItem = OutboxJobItemEntity.builder()
+                        .jobId(job.getId())
+                        .documentId(documentId)
+                        .status(OutboxJobStatus.NEW)
+                        .build();
+
+                allJobItems.add(jobItem);
+            }
+        }
+
+        documentRepository.saveAll(allDocuments);
+        outboxItemRepository.saveAll(allJobItems);
+    }
+
+    @Transactional
+    @Override
+    public Map<OutboxJobEntity, List<OutboxJobItemEntity>> takeForProcessing(
+            OutboxJobType type,
+            OutboxJobStatus status,
+            int limit
+    ) {
+        var jobs = outboxRepository.findAllByTypeAndStatus(
+                type.getType(),
+                status.getStatus(),
+                limit
+        );
+
+        jobs.forEach(job -> job.setStatus(OutboxJobStatus.PROCESSING));
+
+        var items = outboxItemRepository
+                .findAllByJobIdIn(
+                        jobs.stream()
+                                .map(OutboxJobEntity::getId)
+                                .toList()
+                );
+
+        items.forEach(item -> item.setStatus(OutboxJobStatus.PROCESSING));
+
+        Map<Long, List<OutboxJobItemEntity>> idsItemsMap = items
+                .stream()
+                .collect(Collectors.groupingBy(OutboxJobItemEntity::getJobId));
+
+        return jobs.stream()
+                .collect(Collectors.toMap(
+                        Function.identity(),
+                        job -> idsItemsMap.getOrDefault(job.getId(), List.of())
+                ));
+    }
+
+    @Transactional
+    @Override
+    public void updateJobAndItemStatus(
+            Long jobId,
+            OutboxJobStatus jobStatus,
+            Map<Long, OutboxJobStatus> itemsStatusMap
+    ) {
+        outboxRepository.updateStatus(jobId, jobStatus);
+
+        Map<OutboxJobStatus, List<Long>> grouped = itemsStatusMap.entrySet().stream()
+                .collect(Collectors.groupingBy(
+                        Map.Entry::getValue,
+                        Collectors.mapping(Map.Entry::getKey, Collectors.toList())
+                ));
+
+
+        grouped.forEach((groupedStatus, ids) -> {
+            outboxItemRepository.updateStatus(ids, groupedStatus);
+        });
+    }
+
+    @Transactional
+    @Override
+    public void updateJobAndItemStatus(
+            Long jobId,
+            List<Long> itemsId,
+            OutboxJobStatus status
+    ) {
+        var updatedOutboxField = outboxRepository.updateStatus(jobId, status);
+
+        if (updatedOutboxField == 0) {
+            throw new IllegalStateException(
+                    "Failed to update outbox job. jobId=" + jobId
+            );
+        }
+
+        var updatedItemField = outboxItemRepository.updateStatus(itemsId, status);
+
+        if (updatedItemField != itemsId.size()) {
+            throw new IllegalStateException(
+                    "Expected to update " + itemsId.size() +
+                            " outbox items but updated " + updatedItemField
+            );
+        }
+    }
+
+    private <T> List<List<T>> chunk(List<T> list, int size) {
+        List<List<T>> result = new ArrayList<>();
+
+        for (int i = 0; i < list.size(); i += size) {
+            result.add(list.subList(i, Math.min(i + size, list.size())));
+        }
+
+        return result;
+    }
+}

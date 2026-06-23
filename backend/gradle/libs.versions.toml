@@ -1,0 +1,61 @@
+[versions]
+springBoot = "4.1.0"
+springDoc = "2.8.9"
+kotlinLogging = "3.0.5"
+
+[libraries]
+
+# Spring Boot starters
+spring-web = { module = "org.springframework.boot:spring-boot-starter-web" }
+spring-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
+spring-amqp = { module = "org.springframework.boot:spring-boot-starter-amqp" }
+spring-validation = { module = "org.springframework.boot:spring-boot-starter-validation" }
+spring-logging = { module = "org.springframework.boot:spring-boot-starter-logging" }
+spring-data-jpa = {module = "org.springframework.boot:spring-boot-starter-data-jpa" }
+spring-data-jdbc = {module = "org.springframework.boot:spring-boot-starter-data-jdbc" }
+spring-jdbc = {module = "org.springframework.boot:spring-boot-starter-jdbc" }
+spring-security = {module = "org.springframework.boot:spring-boot-starter-security" }
+spring-devtools = {module = "org.springframework.boot:spring-boot-devtools" }
+spring-oauth2 = {module = "org.springframework.boot:spring-boot-starter-oauth2-resource-server" }
+spring-kafka = {module = "org.springframework.kafka:spring-kafka"}
+spring-expression = {module = "org.springframework:spring-expression" }
+spring-retry = {module = "org.springframework.retry:spring-retry" }
+spring-redis = {module = "org.springframework.boot:spring-boot-starter-data-redis" }
+
+# React
+spring-web-flux = {module = "org.springframework.boot:spring-boot-starter-webflux" }
+spring-r2dbc = {module = "org.springframework.boot:spring-boot-starter-data-r2dbc" }
+
+# Infra
+infra-r2dbc-postgresql = {module = "org.postgresql:r2dbc-postgresql" }
+infra-reactor-kafka = {module = "io.projectreactor.kafka:reactor-kafka", version = "1.3.25" }
+infra-postgresql = { module = "org.postgresql:postgresql", version = "42.7.3" }
+infra-awssdk-s3 = { module = "software.amazon.awssdk:s3", version = "2.40.2" }
+infra-awssdk-client-netty = { module = "software.amazon.awssdk:netty-nio-client", version = "2.40.2" }
+infra-awssdk-client-apache = { module = "software.amazon.awssdk:apache-client", version = "2.40.2" }
+infra-awssdk-client-spi = { module = "software.amazon.awssdk:http-client-spi", version = "2.40.2" }
+infra-kafka = { module = "org.springframework.kafka:spring-kafka" }
+infra-retry = { module = "org.springframework.retry:spring-retry" }
+infra-liquibase = { module = "org.springframework.boot:spring-boot-starter-liquibase" }
+
+# Docs
+spring-doc = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springDoc" }
+spring-docreact = { module = "org.springdoc:springdoc-openapi-starter-webflux-ui", version.ref = "springDoc" }
+
+# Utils
+util-kotlin-logging = { module = "io.github.microutils:kotlin-logging-jvm", version.ref = "kotlinLogging" }
+util-lombok = { module = "org.projectlombok:lombok" }
+util-jjwt-api = { module = "io.jsonwebtoken:jjwt-api", version = "0.11.5" }
+util-jjwt-impl = { module = "io.jsonwebtoken:jjwt-impl", version = "0.11.5" }
+util-jjwt-jackson = { module = "io.jsonwebtoken:jjwt-jackson", version = "0.11.5" }
+util-jackson = { module = "tools.jackson.core:jackson-databind", version = "3.2.0" }
+util-bucket4j-core = { module = "com.bucket4j:bucket4j_jdk17-core", version = "8.18.0" }
+util-bucket4j-lettuce = { module = "com.bucket4j:bucket4j_jdk17-lettuce", version = "8.18.0" }
+util-micrometer = { module = "io.micrometer:micrometer-registry-prometheus", version = "1.16.3" }
+util-dotenv = {module = "io.github.cdimascio:dotenv-kotlin", version = "6.4.1"}
+
+# Test
+spring-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+test-junit = { module = "org.junit.jupiter:junit-jupiter", version = "5.11.0" }
+test-mockito = { module = "org.mockito:mockito-core", version = "5.12.0" }
+test-mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version = "5.3.1" }

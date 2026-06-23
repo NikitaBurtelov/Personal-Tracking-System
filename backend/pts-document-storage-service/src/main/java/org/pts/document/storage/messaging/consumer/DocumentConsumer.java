@@ -1,17 +1,45 @@
 package org.pts.document.storage.messaging.consumer;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
+import org.pts.document.storage.messaging.command.DeleteDocumentCommand;
+import org.pts.document.storage.messaging.command.UploadDocumentCommand;
+import org.pts.document.storage.messaging.dto.GetDocumentSourceRequest;
+import org.pts.document.storage.service.outbox.JobManagerService;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+
+
 @Service
 @RequiredArgsConstructor
-@Log4j2
+@Slf4j
 public class DocumentConsumer {
+    private final JobManagerService jobManagerService;
 
-    @RabbitListener(queues = "document-storage.queue")
-    public void consume(String message) {
+    @RabbitListener(queues = "${rabbit.get-document-source-request-queue.name}")
+    public void getDocumentSource(GetDocumentSourceRequest message) {
+        log.info("message={}", message);
+
+        jobManagerService.createGetDocumentJob(message);
+    }
+
+    @RabbitListener(queues = "${rabbit.upload-document-source-command-queue.name}")
+    public void uploadDocumentSource(
+            UploadDocumentCommand message
+    ) throws IOException {
+        try {
+
+            jobManagerService.createUploadDocumentJob(message);
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @RabbitListener(queues = "${rabbit.delete-document-source-command-queue.name}")
+    public void deleteDocument(DeleteDocumentCommand message) {
         log.info("message={}", message);
     }
 }

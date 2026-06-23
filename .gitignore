@@ -26,7 +26,6 @@ replay_pid*
 HELP.md
 .gradle
 build/
-!gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
 
@@ -56,6 +55,7 @@ amplicode.xml
 
 ### env
 .env
-infra/local
 infra/prod
+infra/local/pts-docker/data
+infra/local/pts-docker/minio_data
 /.vscode/

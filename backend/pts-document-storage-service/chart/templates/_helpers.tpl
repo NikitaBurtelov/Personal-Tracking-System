@@ -37,9 +37,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 
 {{- define "pts-document-storage-service.secretName" -}}
-{{- if .Values.existingSecretEnv.name -}}
-{{- .Values.existingSecretEnv.name -}}
-{{- else if .Values.secretEnv.name -}}
+{{- if .Values.secretEnv.name -}}
 {{- .Values.secretEnv.name -}}
 {{- else -}}
 {{- printf "%s-env" (include "pts-document-storage-service.fullname" .) -}}
