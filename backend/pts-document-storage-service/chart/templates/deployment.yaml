@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "pts-document-storage-service.fullname" . }}
+  labels:
+    {{- include "pts-document-storage-service.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "pts-document-storage-service.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "pts-document-storage-service.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "pts-document-storage-service.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: {{ include "pts-document-storage-service.name" . }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 10 }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.containerPort }}
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: {{ include "pts-document-storage-service.fullname" . }}-env
+        {{- if or .Values.existingSecretEnv .Values.secretEnv.create }}
+        env:
+        {{- if kindIs "map" .Values.existingSecretEnv }}
+        {{- $secretName := .Values.existingSecretEnv.name }}
+        {{- range $envName, $secretKey := .Values.existingSecretEnv.keys }}
+        - name: {{ $envName }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ $secretName }}
+              key: {{ $secretKey }}
+        {{- end }}
+        {{- else }}
+        {{- range $secret := .Values.existingSecretEnv }}
+        {{- range $envName, $secretKey := $secret.keys }}
+        - name: {{ $envName }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ $secret.name }}
+              key: {{ $secretKey }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
+        {{- if and .Values.secretEnv.create (not .Values.existingSecretEnv) }}
+        {{- $generatedSecretName := include "pts-document-storage-service.secretName" . }}
+        {{- range $envName, $_ := .Values.secretEnv.values }}
+        - name: {{ $envName }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ $generatedSecretName }}
+              key: {{ $envName }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
+        livenessProbe:
+          {{- toYaml .Values.livenessProbe | nindent 10 }}
+        readinessProbe:
+          {{- toYaml .Values.readinessProbe | nindent 10 }}
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

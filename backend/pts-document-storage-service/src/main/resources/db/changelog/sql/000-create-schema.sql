@@ -1,0 +1,1 @@
+create schema if not exists document_storage_schema;

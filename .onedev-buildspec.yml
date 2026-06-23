@@ -1,0 +1,65 @@
+version: 47
+jobs:
+- name: build-and-deploy-document-storage
+  steps:
+  - type: CheckoutStep
+    name: checkout
+    cloneCredential:
+      type: DefaultCredential
+    withLfs: false
+    withSubmodules: false
+    condition: SUCCESSFUL
+    optional: false
+  - type: BuildImageWithKanikoStep
+    name: build and push image
+    buildContext: backend
+    output:
+      type: RegistryOutput
+      destinations: '@server@/pts/pts-backend-java/pts-document-storage-service:@build_number@ @server@/pts/pts-backend-java/pts-document-storage-service:latest'
+    registryLogins:
+    - registryUrl: '@server_url@'
+      userName: '@job_token@'
+      passwordSecret: access-token
+    moreOptions: --dockerfile=/onedev-build/work/backend/pts-document-storage-service/Dockerfile
+    condition: SUCCESSFUL
+    optional: false
+  - type: CommandStep
+    name: deploy with helm
+    runInContainer: true
+    image: dtzar/helm-kubectl:3.16.4
+    interpreter:
+      type: DefaultInterpreter
+      commands: |
+        set -euo pipefail
+        mkdir -p "$HOME/.kube"
+        cat > "$HOME/.kube/config" <<'EOF'
+        @secret:kubeconfig@
+        EOF
+        chmod 600 "$HOME/.kube/config"
+        kubectl create secret docker-registry onedev-registry \
+          --namespace dev \
+          --docker-server=@server@ \
+          --docker-username=@job_token@ \
+          --docker-password=@secret:access-token@ \
+          --dry-run=client \
+          -o yaml | kubectl apply -f -
+        helm upgrade --install pts-document-storage-service backend/pts-document-storage-service/chart \
+          --namespace dev \
+          --create-namespace \
+          --set image.repository=@server@/pts/pts-backend-java/pts-document-storage-service \
+          --set image.tag=@build_number@ \
+          --set imagePullSecrets[0].name=onedev-registry \
+          --wait \
+          --timeout 5m
+    runAs: 0:0
+    useTTY: false
+    condition: SUCCESSFUL
+    optional: false
+  triggers:
+  - type: BranchUpdateTrigger
+    branches: master main
+    userMatch: anyone
+  retryCondition: never
+  maxRetries: 3
+  retryDelay: 30
+  timeout: 3600

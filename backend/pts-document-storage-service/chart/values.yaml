@@ -1,0 +1,114 @@
+replicaCount: 1
+
+image:
+  repository: localhost:5000/pts-document-storage-service
+  pullPolicy: IfNotPresent
+  tag: latest
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+
+service:
+  type: ClusterIP
+  port: 8094
+
+containerPort: 8094
+
+env:
+  SPRING_PROFILES_ACTIVE: dev
+  SERVER_PORT: "8094"
+  MINIO_URL: "http://minio.dev.svc.cluster.local:9000"
+  MINIO_REGION: "fin-1"
+  REDIS_HOST: "localhost"
+  REDIS_PORT: "6379"
+  REDIS_PASSWORD: ""
+  FEED_TTL: "3600"
+  MANAGEMENT_HEALTH_REDIS_ENABLED: "false"
+
+secretEnv:
+  create: false
+  name: ""
+  values:
+    MINIO_LOGIN: ""
+    MINIO_PASSWORD: ""
+    RABBITMQ_HOST: ""
+    RABBITMQ_PORT: ""
+    RABBITMQ_USERNAME: ""
+    RABBITMQ_PASSWORD: ""
+    RABBITMQ_VHOST: "/"
+    DATASOURCE_USERNAME: ""
+    DATASOURCE_PASSWORD: ""
+    REDIS_PASSWORD: ""
+
+existingSecretEnv:
+  - name: pts-document-storage-service-s3-credentials
+    keys:
+      MINIO_LOGIN: S3_ACCESS_KEY
+      MINIO_PASSWORD: S3_SECRET_KEY
+  - name: pts-document-storage-service-s3-config
+    keys:
+      DOCUMENT_PERSISTENCE_BUCKET_NAME: DOCUMENT_PERSISTENCE_BUCKET_NAME
+      DOCUMENT_TEMP_BUCKET_NAME: DOCUMENT_TEMP_BUCKET_NAME
+      MASTER_KEY: MASTER_KEY
+  - name: pts-document-storage-service-rabbitmq-config
+    keys:
+      RABBITMQ_HOST: RABBITMQ_HOST
+      RABBITMQ_PORT: RABBITMQ_PORT
+      RABBITMQ_USERNAME: RABBITMQ_USERNAME
+      RABBITMQ_PASSWORD: RABBITMQ_PASSWORD
+      RABBITMQ_VHOST: RABBITMQ_VHOST
+  - name: pts-document-storage-service-db-config
+    keys:
+      DATASOURCE_URL: SPRING_DATASOURCE_URL
+      DATASOURCE_USERNAME: SPRING_DATASOURCE_USERNAME
+      DATASOURCE_PASSWORD: SPRING_DATASOURCE_PASSWORD
+
+resources: {}
+
+livenessProbe:
+  httpGet:
+    path: /actuator/health
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 20
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /actuator/health
+    port: http
+  initialDelaySeconds: 20
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
