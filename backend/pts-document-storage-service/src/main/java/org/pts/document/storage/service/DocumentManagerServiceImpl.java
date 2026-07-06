@@ -22,21 +22,24 @@ public class DocumentManagerServiceImpl implements DocumentManagerService {
 
     @Override
     public List<UploadResult> uploadDocumentAsync(List<UUID> documentsId) {
+        log.info("Performing the document download process, documentId: {}", documentsId);
         List<CompletableFuture<UploadResult>> futures = documentsId.stream()
                 .map(docId ->
                         CompletableFuture.supplyAsync(() -> {
                                     try {
                                         var result = documentService.upload(docId);
+                                        log.info("Document {} uploaded successfully", docId);
                                         return new UploadResult(
                                                 docId,
                                                 result,
-                                                "Upload is done"
+                                                "Document uploaded successfully"
                                         );
                                     } catch (Exception e) {
+                                        log.error("Document {} failed to load.", docId);
                                         return new UploadResult(
                                                 docId,
                                                 null,
-                                                "Upload is failed" + e.getMessage()
+                                                "Document failed to load" + e.getMessage()
                                         );
                                     }
                                 }, documentExecutorService

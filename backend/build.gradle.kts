@@ -2,7 +2,6 @@ import org.gradle.api.tasks.testing.Test
 
 plugins {
     id("java")
-    id("java-library")
     id("io.spring.dependency-management") version "1.1.7"
     id("jacoco")
     id("com.palantir.git-version") version "5.0.0"
@@ -34,7 +33,7 @@ dependencyManagement {
 
 subprojects {
     apply(plugin = "io.spring.dependency-management")
-    apply(plugin = "java-library")
+    apply(plugin = "java")
     apply(plugin = "jacoco")
 
     dependencyManagement {

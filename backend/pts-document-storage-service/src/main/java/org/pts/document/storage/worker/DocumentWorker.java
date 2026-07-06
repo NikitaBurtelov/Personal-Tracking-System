@@ -91,8 +91,12 @@ public class DocumentWorker {
                 10
         );
 
-        jobs.forEach((job, items) -> {
-            try {
+        var jobsId = jobs.keySet().stream().map(OutboxJobEntity::getId).toList();
+
+        log.info("Tasks: {} have been accepted for processing.", jobsId);
+
+        try {
+            jobs.forEach((job, items) -> {
                 var docs = items.stream().map(OutboxJobItemEntity::getDocumentId).toList();
 
                 var itemsDocsMap = items.stream()
@@ -105,11 +109,13 @@ public class DocumentWorker {
                 var results = documentManagerService.uploadDocumentAsync(docs);
 
                 identifyAndUpdateStatus(job, itemsDocsMap, results);
-
-            } catch (Exception e) {
-                markFailed(job, items);
-            }
-        });
+            });
+        } catch (Exception e) {
+            log.error("Failed to complete tasks: {} ", jobsId, e);
+            markFailed(
+                    jobs.keySet().stream().map(OutboxJobEntity::getId).toList(),
+                    jobs.values().stream().flatMap(List::stream).map(OutboxJobItemEntity::getId).toList());
+        }
     }
 
     private void getDocumentProcessing() {
@@ -181,6 +187,17 @@ public class DocumentWorker {
                 items.stream()
                         .map(OutboxJobItemEntity::getId)
                         .collect(Collectors.toList()),
+                OutboxJobStatus.FAILED
+        );
+    }
+
+    private void markFailed(
+            List<Long> jobsId,
+            List<Long> itemsId
+    ) {
+        jobManagerService.updateJobAndItemStatus(
+                jobsId,
+                itemsId,
                 OutboxJobStatus.FAILED
         );
     }

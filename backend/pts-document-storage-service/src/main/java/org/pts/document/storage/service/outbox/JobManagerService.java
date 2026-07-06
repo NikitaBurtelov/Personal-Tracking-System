@@ -38,4 +38,11 @@ public interface JobManagerService {
             OutboxJobStatus status,
             Map<Long, OutboxJobStatus> itemsStatusMap
     );
+
+    @Transactional
+    void updateJobAndItemStatus(
+            List<Long> jobId,
+            List<Long> itemsId,
+            OutboxJobStatus status
+    );
 }

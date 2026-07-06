@@ -35,4 +35,15 @@ public interface OutboxRepository extends JpaRepository<OutboxJobEntity, Long> {
             @Param("jobId") Long jobId,
             @Param("status") OutboxJobStatus status
     );
+
+    @Modifying
+    @Query("""
+                UPDATE OutboxJobEntity j
+                SET j.status = :status
+                WHERE j.id IN :jobsId
+            """)
+    int updateStatus(
+            @Param("jobsId") List<Long> jobsId,
+            @Param("status") OutboxJobStatus status
+    );
 }

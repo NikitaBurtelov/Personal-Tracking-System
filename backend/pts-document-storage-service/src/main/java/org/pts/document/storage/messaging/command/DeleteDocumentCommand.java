@@ -1,4 +1,8 @@
 package org.pts.document.storage.messaging.command;
 
-public class DeleteDocumentCommand {
+import java.util.UUID;
+
+public record DeleteDocumentCommand(
+        UUID workId
+) {
 }
