@@ -8,8 +8,9 @@ group = "${rootProject.group}.document.storage"
 version = rootProject.version
 
 dependencies {
-    implementation(libs.spring.amqp)
     implementation(libs.spring.doc)
+    implementation(libs.spring.config)
+    implementation(libs.spring.kafka)
     implementation(libs.spring.actuator)
     implementation(libs.spring.validation)
     implementation(libs.spring.jdbc)

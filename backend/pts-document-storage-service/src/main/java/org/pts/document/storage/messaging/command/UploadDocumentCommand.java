@@ -6,7 +6,7 @@ import java.util.UUID;
 public record UploadDocumentCommand(
         UUID workId,
         PayloadDocumentsUpload payload
-) {
+) implements Command {
     public record PayloadDocumentsUpload(
             List<Document> documents
     ) {

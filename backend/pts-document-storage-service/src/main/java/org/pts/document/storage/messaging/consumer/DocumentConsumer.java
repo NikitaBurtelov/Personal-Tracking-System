@@ -6,20 +6,39 @@ import org.pts.document.storage.messaging.command.DeleteDocumentCommand;
 import org.pts.document.storage.messaging.command.UploadDocumentCommand;
 import org.pts.document.storage.messaging.dto.GetDocumentSourceRequest;
 import org.pts.document.storage.service.outbox.JobManagerService;
-import org.springframework.amqp.rabbit.annotation.RabbitHandler;
-import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.stereotype.Service;
+import org.springframework.kafka.annotation.KafkaHandler;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.UUID;
 
-@Service
-@RabbitListener(queues = "${rabbit.document-source-commands-queue.name}")
+@Component
+@KafkaListener(
+        topics = "${app.kafka.topic.document-events-topic.name}",
+        groupId = "${spring.kafka.consumer.group-id}",
+        concurrency = "${spring.kafka.listener.concurrency}"
+)
 @RequiredArgsConstructor
 @Slf4j
 public class DocumentConsumer {
     private final JobManagerService jobManagerService;
 
-    @RabbitHandler
+    @KafkaHandler
+    public void uploadDocumentSource(
+            @Payload UploadDocumentCommand message
+    ) throws IOException {
+        try {
+            log.info("A request to upload files has been received. workId:{}", message.workId());
+            jobManagerService.createUploadDocumentJob(message);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @KafkaHandler
     public void getDocumentSource(GetDocumentSourceRequest message) {
         try {
             log.info("Request to view files received. workId:{}", message.workId());
@@ -30,20 +49,7 @@ public class DocumentConsumer {
         }
     }
 
-    @RabbitHandler
-    public void uploadDocumentSource(
-            UploadDocumentCommand message
-    ) throws IOException {
-        try {
-            log.info("A request to upload files has been received. workId:{}", message.workId());
-            jobManagerService.createUploadDocumentJob(message);
-
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @RabbitHandler
+    @KafkaHandler
     public void deleteDocument(DeleteDocumentCommand message) {
         try {
             log.info("A request to delete files was received. workdId={}", message.workId());

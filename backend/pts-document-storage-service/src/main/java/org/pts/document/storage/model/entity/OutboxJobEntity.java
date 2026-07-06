@@ -6,6 +6,7 @@ import org.pts.document.storage.model.enums.OutboxJobStatus;
 import org.pts.document.storage.model.enums.OutboxJobType;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Table(name = "outbox", schema = "document_storage_schema")
@@ -18,6 +19,8 @@ public class OutboxJobEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(name = "request_id", columnDefinition = "uuid", unique = false, nullable = false)
+    private UUID requestId;
     @Enumerated(EnumType.STRING)
     @Column(name = "type", unique = false, nullable = false)
     private OutboxJobType type;

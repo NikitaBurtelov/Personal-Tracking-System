@@ -7,12 +7,15 @@ import org.pts.document.storage.messaging.dto.GetDocumentSourceRequest;
 import org.pts.document.storage.model.entity.DocumentEntity;
 import org.pts.document.storage.model.entity.OutboxJobEntity;
 import org.pts.document.storage.model.entity.OutboxJobItemEntity;
+import org.pts.document.storage.model.entity.ProcessingRequest;
 import org.pts.document.storage.model.enums.DocumentStatus;
 import org.pts.document.storage.model.enums.OutboxJobStatus;
 import org.pts.document.storage.model.enums.OutboxJobType;
+import org.pts.document.storage.model.enums.RequestType;
 import org.pts.document.storage.repository.DocumentRepository;
 import org.pts.document.storage.repository.OutboxItemRepository;
 import org.pts.document.storage.repository.OutboxRepository;
+import org.pts.document.storage.repository.ProcessingRequestRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +27,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class JobManagerServiceImpl implements JobManagerService {
+    private final RequestManagerService requestManagerService;
     private final DocumentRepository documentRepository;
+    private final ProcessingRequestRepository processingRequestRepository;
     private final OutboxRepository outboxRepository;
     private final OutboxItemRepository outboxItemRepository;
 
@@ -72,10 +77,15 @@ public class JobManagerServiceImpl implements JobManagerService {
     @Override
     public void createUploadDocumentJob(UploadDocumentCommand msg) {
         try {
+            if (processingRequestRepository.findById(msg.workId()).isPresent()) {
+                return;
+            }
+
             List<UploadDocumentCommand.PayloadDocumentsUpload.Document> docs = msg.payload().documents();
 
             var batches = chunk(docs, 10);
 
+            var processingRequestId = UUID.randomUUID();
             var allDocuments = new ArrayList<DocumentEntity>();
             var allJobItems = new ArrayList<OutboxJobItemEntity>();
             var jobIds = new ArrayList<Long>();
@@ -83,6 +93,7 @@ public class JobManagerServiceImpl implements JobManagerService {
             for (List<UploadDocumentCommand.PayloadDocumentsUpload.Document> batch : batches) {
 
                 var job = OutboxJobEntity.builder()
+                        .requestId(processingRequestId)
                         .type(OutboxJobType.UPLOAD)
                         .status(OutboxJobStatus.NEW)
                         .build();
@@ -113,6 +124,13 @@ public class JobManagerServiceImpl implements JobManagerService {
                 }
             }
 
+            var processingRequest = ProcessingRequest.builder()
+                    .id(UUID.randomUUID())
+                    .totalJobs(allJobItems.size())
+                    .type(RequestType.UPLOAD)
+                    .build();
+
+            processingRequestRepository.save(processingRequest);
             documentRepository.saveAll(allDocuments);
             outboxItemRepository.saveAll(allJobItems);
 
@@ -141,13 +159,14 @@ public class JobManagerServiceImpl implements JobManagerService {
             jobs.forEach(job -> job.setStatus(OutboxJobStatus.PROCESSING));
 
             var items = outboxItemRepository
-                    .findAllByJobIdIn(
+                    .findAllByJobIdInAndStatusContains(
                             jobs.stream()
                                     .map(OutboxJobEntity::getId)
-                                    .toList()
+                                    .toList(),
+                            OutboxJobStatus.NEW
                     );
 
-            items.forEach(item -> item.setStatus(OutboxJobStatus.PROCESSING));
+            items.forEach(item -> item.setStatus(status));
 
             Map<Long, List<OutboxJobItemEntity>> idsItemsMap = items
                     .stream()
@@ -182,6 +201,29 @@ public class JobManagerServiceImpl implements JobManagerService {
         grouped.forEach((groupedStatus, ids) -> {
             outboxItemRepository.updateStatus(ids, groupedStatus);
         });
+    }
+
+    @Transactional
+    @Override
+    public void updateJobAndItemStatus(
+            OutboxJobEntity job,
+            OutboxJobStatus jobStatus,
+            Map<Long, OutboxJobStatus> itemsStatusMap
+    ) {
+        outboxRepository.updateStatus(job.getId(), jobStatus);
+
+        Map<OutboxJobStatus, List<Long>> grouped = itemsStatusMap.entrySet().stream()
+                .collect(Collectors.groupingBy(
+                        Map.Entry::getValue,
+                        Collectors.mapping(Map.Entry::getKey, Collectors.toList())
+                ));
+
+
+        grouped.forEach((groupedStatus, ids) -> {
+            outboxItemRepository.updateStatus(ids, groupedStatus);
+        });
+
+        requestManagerService.onJobCompleted(job.getRequestId());
     }
 
     @Transactional

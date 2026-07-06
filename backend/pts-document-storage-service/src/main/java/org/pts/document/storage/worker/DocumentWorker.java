@@ -172,7 +172,7 @@ public class DocumentWorker {
         });
 
         jobManagerService.updateJobAndItemStatus(
-                job.getId(),
+                job,
                 jobStatus.get(),
                 itemsStatusMap
         );

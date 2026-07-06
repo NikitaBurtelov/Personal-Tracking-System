@@ -20,4 +20,6 @@ public interface OutboxItemRepository extends CrudRepository<OutboxJobItemEntity
             WHERE i.id IN :itemIds
             """)
     int updateStatus(List<Long> itemIds, OutboxJobStatus status);
+
+    List<OutboxJobItemEntity> findAllByJobIdInAndStatusContains(Collection<Long> jobIds, OutboxJobStatus status);
 }
