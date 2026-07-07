@@ -6,9 +6,9 @@ import org.pts.document.storage.model.dto.JobUploadData;
 import org.pts.document.storage.model.dto.UploadProcessResult;
 import org.pts.document.storage.model.entity.OutboxJobEntity;
 import org.pts.document.storage.model.entity.OutboxJobItemEntity;
-import org.pts.document.storage.model.enums.Status;
-import org.pts.document.storage.model.enums.Type;
-import org.pts.document.storage.service.DocumentManagerService;
+import org.pts.document.storage.model.enums.JobStatus;
+import org.pts.document.storage.model.enums.JobType;
+import org.pts.document.storage.service.document.DocumentManagerService;
 import org.pts.document.storage.service.outbox.JobManagerService;
 import org.springframework.stereotype.Component;
 
@@ -24,12 +24,12 @@ public class UploadDocumentProcessing {
 
     public UploadProcessResult execute() {
         var jobs = jobManagerService.takeForProcessing(
-                Type.UPLOAD,
-                Status.NEW,
+                JobType.UPLOAD,
+                JobStatus.NEW,
                 10
         );
 
-        var jobsId = jobs
+        var jobIds = jobs
                 .keySet()
                 .stream()
                 .map(OutboxJobEntity::getId)
@@ -41,7 +41,7 @@ public class UploadDocumentProcessing {
 
         log.info(
                 "Tasks: {} have been accepted for processing.",
-                jobsId
+                jobIds
         );
 
         try {
@@ -52,7 +52,7 @@ public class UploadDocumentProcessing {
                         .map(OutboxJobItemEntity::getDocumentId
                         )
                         .toList();
-                var results = documentManagerService.uploadDocumentAsync(docs);
+                var results = documentManagerService.uploadDocumentsAsync(docs);
 
                 jobsData.add(
                         JobUploadData.builder()
@@ -64,17 +64,17 @@ public class UploadDocumentProcessing {
 
             return new UploadProcessResult(jobsData);
         } catch (Exception e) {
-            log.error("Failed to upload documents for tasks: {} ", jobsId, e);
-            markFailed(jobsId, jobs.values().stream()
+            log.error("Failed to upload documents for tasks: {} ", jobIds, e);
+            markFailed(jobIds, jobs.values().stream()
                     .flatMap(List::stream)
-                    .map(item -> item.getId())
+                    .map(OutboxJobItemEntity::getId)
                     .toList());
             return null;
         }
     }
 
-    private void markFailed(List<Long> jobsId, List<Long> itemsId) {
-        jobManagerService.updateJobAndItemStatus(jobsId, itemsId, Status.FAILED);
+    private void markFailed(List<Long> jobIds, List<Long> itemIds) {
+        jobManagerService.updateJobAndItemStatus(jobIds, itemIds, JobStatus.FAILED);
     }
 }
 

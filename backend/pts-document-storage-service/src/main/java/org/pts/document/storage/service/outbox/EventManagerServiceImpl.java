@@ -20,4 +20,19 @@ public class EventManagerServiceImpl implements EventManagerService {
     public List<OutboxEventEntity> getUnpublishedEvents(int limit) {
         return outboxEventRepository.findUnpublishedBatch(limit);
     }
+
+    @Transactional
+    @Override
+    public void markEventAsPublished(OutboxEventEntity event) {
+        event.setPublished(true);
+        outboxEventRepository.save(event);
+    }
+
+    @Transactional
+    @Override
+    public void markEventsAsPublished(List<OutboxEventEntity> events) {
+        events.forEach(event -> event.setPublished(true));
+
+        outboxEventRepository.saveAll(events);
+    }
 }

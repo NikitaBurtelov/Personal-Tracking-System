@@ -1,9 +1,8 @@
-package org.pts.document.storage.service;
+package org.pts.document.storage.service.document;
 
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.pts.document.storage.service.document.DocumentService;
 import org.pts.document.storage.service.dto.UploadResult;
 import org.springframework.stereotype.Service;
 
@@ -21,9 +20,9 @@ public class DocumentManagerServiceImpl implements DocumentManagerService {
     private final ExecutorService documentExecutorService;
 
     @Override
-    public List<UploadResult> uploadDocumentAsync(List<UUID> documentsId) {
-        log.info("Performing the document download process, documentId: {}", documentsId);
-        List<CompletableFuture<UploadResult>> futures = documentsId.stream()
+    public List<UploadResult> uploadDocumentsAsync(List<UUID> documentIds) {
+        log.info("Performing the document upload process, documentIds: {}", documentIds);
+        List<CompletableFuture<UploadResult>> futures = documentIds.stream()
                 .map(docId ->
                         CompletableFuture.supplyAsync(() -> {
                                     try {
@@ -35,11 +34,11 @@ public class DocumentManagerServiceImpl implements DocumentManagerService {
                                                 "Document uploaded successfully"
                                         );
                                     } catch (Exception e) {
-                                        log.error("Document {} failed to load.", docId);
+                                        log.error("Document {} failed to upload.", docId, e);
                                         return new UploadResult(
                                                 docId,
                                                 null,
-                                                "Document failed to load" + e.getMessage()
+                                                "Document failed to upload: " + e.getMessage()
                                         );
                                     }
                                 }, documentExecutorService
@@ -57,8 +56,8 @@ public class DocumentManagerServiceImpl implements DocumentManagerService {
     }
 
     @Override
-    public List<UploadResult> getDocumentAsync(List<UUID> documentsId) {
-        List<CompletableFuture<UploadResult>> futures = documentsId.stream()
+    public List<UploadResult> fetchDocumentsAsync(List<UUID> documentIds) {
+        List<CompletableFuture<UploadResult>> futures = documentIds.stream()
                 .map(docId ->
                         CompletableFuture.supplyAsync(() -> {
                                     try {
@@ -66,13 +65,13 @@ public class DocumentManagerServiceImpl implements DocumentManagerService {
                                         return new UploadResult(
                                                 docId,
                                                 result,
-                                                "Upload is done"
+                                                "Fetch is done"
                                         );
                                     } catch (Exception e) {
                                         return new UploadResult(
                                                 docId,
                                                 null,
-                                                "Upload is failed" + e.getMessage()
+                                                "Fetch failed: " + e.getMessage()
                                         );
                                     }
                                 }, documentExecutorService
@@ -98,3 +97,4 @@ public class DocumentManagerServiceImpl implements DocumentManagerService {
         }
     }
 }
+

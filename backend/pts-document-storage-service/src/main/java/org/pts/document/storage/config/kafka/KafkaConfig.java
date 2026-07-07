@@ -16,14 +16,18 @@ import org.springframework.util.backoff.FixedBackOff;
 @Configuration
 public class KafkaConfig {
     @Bean
-    public DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> kafkaTemplate) {
+    public DefaultErrorHandler errorHandler(KafkaTemplate<String, Object> kafkaTemplate) {
 
         DeadLetterPublishingRecoverer recoverer =
                 new DeadLetterPublishingRecoverer(kafkaTemplate,
-                        (record, ex) -> new TopicPartition("document-events-dlt", record.partition())
+                        (record, ex) ->
+                                new TopicPartition(
+                                        record.topic() + ".DLT",
+                                        record.partition()
+                                )
                 );
 
-        FixedBackOff backOff = new FixedBackOff(1000L, 3);
+        FixedBackOff backOff = new FixedBackOff(0L, 0);
 
         return new DefaultErrorHandler(recoverer, backOff);
     }

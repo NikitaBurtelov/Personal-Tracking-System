@@ -2,16 +2,14 @@ package org.pts.document.storage.service.outbox;
 
 import org.pts.document.storage.messaging.command.UploadDocumentCommand;
 import org.pts.document.storage.messaging.dto.GetDocumentSourceRequest;
-import org.pts.document.storage.model.entity.DocumentEntity;
 import org.pts.document.storage.model.entity.OutboxJobEntity;
 import org.pts.document.storage.model.entity.OutboxJobItemEntity;
-import org.pts.document.storage.model.enums.Status;
-import org.pts.document.storage.model.enums.Type;
+import org.pts.document.storage.model.enums.JobStatus;
+import org.pts.document.storage.model.enums.JobType;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 public interface JobManagerService {
     @Transactional
@@ -22,44 +20,35 @@ public interface JobManagerService {
 
     @Transactional
     Map<OutboxJobEntity, List<OutboxJobItemEntity>> takeForProcessing(
-            Type type,
-            Status status,
+            JobType type,
+            JobStatus status,
             int limit
     );
 
     @Transactional
     void updateJobAndItemStatus(
             Long jobId,
-            List<Long> itemsId,
-            Status status
-    );
-
-    @Transactional
-    void updateJobAndItemStatus(
-            Long jobId,
-            Status status,
-            Map<Long, Status> itemsStatusMap
+            List<Long> itemIds,
+            JobStatus status
     );
 
     @Transactional
     void updateJobAndItemStatus(
             OutboxJobEntity job,
-            Status status,
-            Map<Long, Status> itemsStatusMap
+            JobStatus status,
+            Map<Long, JobStatus> itemsStatusMap
     );
 
     @Transactional
     void updateJobAndItemStatus(
-            List<Long> jobId,
-            List<Long> itemsId,
-            Status status
+            List<Long> jobIds,
+            List<Long> itemIds,
+            JobStatus status
     );
 
     @Transactional
     void updateJobAndItemStatusBatch(
-            Map<Long, Status> jobStatusMap,
-            Map<Long, Map<Long, Status>> itemsStatusByJob
+            Map<Long, JobStatus> jobStatusMap,
+            Map<Long, Map<Long, JobStatus>> itemsStatusByJob
     );
-
-    List<DocumentEntity> getDocument(UUID requestId);
 }

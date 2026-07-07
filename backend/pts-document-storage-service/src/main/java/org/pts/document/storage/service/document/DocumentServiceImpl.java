@@ -4,8 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.pts.document.storage.config.minio.MinIOProperties;
 import org.pts.document.storage.model.entity.DocumentEntity;
-import org.pts.document.storage.model.enums.Status;
-import org.pts.document.storage.service.security.SecurityDocumentService;
+import org.pts.document.storage.model.enums.DocumentStatus;
+import org.pts.document.storage.service.document.security.SecurityDocumentService;
 import org.pts.document.storage.service.storage.StorageService;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -122,7 +122,7 @@ public class DocumentServiceImpl implements DocumentService {
         document.setKey(persistenceKey);
         document.setEncryptedFileKey(encryptedPayload.encryptedDataKey());
         document.setIv(encryptedPayload.iv());
-        document.setStatus(Status.UPLOADING);
+        document.setStatus(DocumentStatus.UPLOADING);
 
         documentRepositoryService.save(
                 document
@@ -148,11 +148,11 @@ public class DocumentServiceImpl implements DocumentService {
                     )
             );
 
-            documentRepositoryService.updateStatus(id, Status.UPLOADED);
+            documentRepositoryService.updateStatus(id, DocumentStatus.UPLOADED);
 
             return persistenceKey;
         } catch (Exception e) {
-            documentRepositoryService.updateStatus(id, Status.FAILED);
+            documentRepositoryService.updateStatus(id, DocumentStatus.FAILED);
             throw new RuntimeException(e);
         }
     }

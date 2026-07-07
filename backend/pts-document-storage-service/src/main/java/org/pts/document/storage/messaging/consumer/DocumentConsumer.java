@@ -15,7 +15,7 @@ import java.io.IOException;
 
 @Component
 @KafkaListener(
-        topics = "${app.kafka.topic.document-events-topic.name}",
+        topics = "${app.kafka.topic.document-commands-topic.name}",
         groupId = "${spring.kafka.consumer.group-id}",
         concurrency = "${spring.kafka.listener.concurrency}"
 )

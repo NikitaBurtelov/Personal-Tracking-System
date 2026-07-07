@@ -1,7 +1,7 @@
 package org.pts.document.storage.repository;
 
 import org.pts.document.storage.model.entity.OutboxJobItemEntity;
-import org.pts.document.storage.model.enums.Status;
+import org.pts.document.storage.model.enums.JobStatus;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -19,7 +19,7 @@ public interface OutboxItemRepository extends CrudRepository<OutboxJobItemEntity
             SET i.status = :status
             WHERE i.id IN :itemIds
             """)
-    int updateStatus(List<Long> itemIds, Status status);
+    int updateStatus(List<Long> itemIds, JobStatus status);
 
-    List<OutboxJobItemEntity> findAllByJobIdInAndStatusContains(Collection<Long> jobIds, Status status);
+    List<OutboxJobItemEntity> findAllByJobIdInAndStatus(Collection<Long> jobIds, JobStatus status);
 }

@@ -8,4 +8,10 @@ import java.util.List;
 public interface EventManagerService {
     @Transactional
     List<OutboxEventEntity> getUnpublishedEvents(int limit);
+
+    @Transactional
+    void markEventAsPublished(OutboxEventEntity event);
+
+    @Transactional
+    void markEventsAsPublished(List<OutboxEventEntity> events);
 }

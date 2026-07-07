@@ -2,8 +2,8 @@ package org.pts.document.storage.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.pts.document.storage.model.enums.Status;
-import org.pts.document.storage.model.enums.Type;
+import org.pts.document.storage.model.enums.JobStatus;
+import org.pts.document.storage.model.enums.JobType;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -22,10 +22,10 @@ public class ProcessingRequest {
     private UUID id;
 
     @Enumerated(EnumType.STRING)
-    private Type type;
+    private JobType type;
 
     @Enumerated(EnumType.STRING)
-    private Status status;
+    private JobStatus status;
 
     @Column(name = "total_jobs")
     private int totalJobs;
@@ -50,27 +50,6 @@ public class ProcessingRequest {
         createdAt = Instant.now();
         updatedAt = createdAt;
         completedJobs = 0;
-        status = Status.NEW;
-    }
-
-    public void markJobCompleted() {
-        this.completedJobs++;
-
-        if (this.completedJobs == this.totalJobs) {
-            this.status = Status.DONE;
-            this.completedAt = Instant.now();
-            this.updatedAt = this.completedAt;
-        }
-    }
-
-    public void markFailed() {
-        this.status = Status.FAILED;
-        this.completedAt = Instant.now();
-    }
-
-    public void start(int totalJobs, int totalItems) {
-        this.status = Status.PROCESSING;
-        this.totalJobs = totalJobs;
-        this.completedJobs = 0;
+        status = JobStatus.NEW;
     }
 }

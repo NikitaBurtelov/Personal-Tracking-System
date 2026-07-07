@@ -15,7 +15,7 @@ public interface OutboxEventRepository extends JpaRepository<OutboxEventEntity, 
     @Query(
             value = """
                     select *
-                    from outbox_event
+                    from document_storage_schema.outbox_event
                     where published = false
                     order by created_at asc
                     limit :limit

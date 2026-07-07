@@ -2,7 +2,7 @@ package org.pts.document.storage.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.pts.document.storage.model.enums.Status;
+import org.pts.document.storage.model.enums.EventStatus;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -26,7 +26,7 @@ public class OutboxEventEntity {
     @Column(columnDefinition = "jsonb", nullable = true)
     private String payload;
 
-    private Status status;
+    private EventStatus status;
 
     private boolean published;
 

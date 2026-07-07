@@ -2,7 +2,7 @@ package org.pts.document.storage.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.pts.document.storage.model.enums.Status;
+import org.pts.document.storage.model.enums.JobStatus;
 
 import java.util.UUID;
 
@@ -23,5 +23,5 @@ public class OutboxJobItemEntity {
     private UUID documentId;
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private Status status;
+    private JobStatus status;
 }

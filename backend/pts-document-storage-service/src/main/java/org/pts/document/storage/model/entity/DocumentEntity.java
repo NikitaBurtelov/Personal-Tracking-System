@@ -2,7 +2,7 @@ package org.pts.document.storage.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.pts.document.storage.model.enums.Status;
+import org.pts.document.storage.model.enums.DocumentStatus;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -32,7 +32,7 @@ public class DocumentEntity {
     private Instant createdAt;
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, updatable = true, unique = false)
-    private Status status;
+    private DocumentStatus status;
     @Column(name = "updated_at", nullable = false, updatable = true)
     private Instant updateAt;
 
@@ -43,7 +43,7 @@ public class DocumentEntity {
         }
         createdAt = Instant.now();
 
-        status = Status.NEW;
+        status = DocumentStatus.NEW;
         updateAt = createdAt;
     }
 

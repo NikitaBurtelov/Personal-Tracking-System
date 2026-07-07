@@ -1,4 +1,4 @@
-package org.pts.document.storage.service.security;
+package org.pts.document.storage.service.document.security;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

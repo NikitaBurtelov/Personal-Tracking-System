@@ -3,7 +3,7 @@ package org.pts.document.storage.service.outbox;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.pts.document.storage.model.entity.OutboxEventEntity;
-import org.pts.document.storage.model.enums.Type;
+import org.pts.document.storage.model.enums.JobStatus;
 import org.pts.document.storage.repository.OutboxEventRepository;
 import org.pts.document.storage.repository.ProcessingRequestRepository;
 import org.springframework.stereotype.Service;
@@ -23,7 +23,7 @@ public class RequestManagerServiceImpl implements RequestManagerService {
     public void onJobCompleted(UUID requestId) {
         String status = requestRepository.completeJob(requestId);
 
-        if (status.equals(Type.DONE.getType())) {
+        if (status.equals(JobStatus.DONE.getStatus())) {
             outboxEventRepository.save(
                     OutboxEventEntity.builder()
                             .requestId(requestId)

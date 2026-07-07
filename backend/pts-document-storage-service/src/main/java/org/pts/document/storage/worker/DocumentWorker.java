@@ -4,9 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.pts.document.storage.model.entity.OutboxJobEntity;
 import org.pts.document.storage.model.entity.OutboxJobItemEntity;
-import org.pts.document.storage.model.enums.Status;
-import org.pts.document.storage.model.enums.Type;
-import org.pts.document.storage.service.DocumentManagerService;
+import org.pts.document.storage.model.enums.JobStatus;
+import org.pts.document.storage.model.enums.JobType;
+import org.pts.document.storage.service.document.DocumentManagerService;
 import org.pts.document.storage.service.dto.UploadResult;
 import org.pts.document.storage.service.outbox.JobManagerService;
 import org.pts.document.storage.worker.process.PublishingEventProcessing;
@@ -116,8 +116,8 @@ public class DocumentWorker {
 
     private void getDocumentProcessing() {
         var jobs = jobManagerService.takeForProcessing(
-                Type.GET,
-                Status.NEW,
+                JobType.GET,
+                JobStatus.NEW,
                 10
         );
 
@@ -132,7 +132,7 @@ public class DocumentWorker {
                                         item -> item)
                         );
 
-                var results = documentManagerService.getDocumentAsync(docs);
+                var results = documentManagerService.fetchDocumentsAsync(docs);
 
                 identifyAndUpdateStatus(job, itemsDocsMap, results);
 
@@ -147,22 +147,22 @@ public class DocumentWorker {
             Map<UUID, OutboxJobItemEntity> itemsDocsMap,
             List<UploadResult> results
     ) {
-        Map<Long, Status> itemsStatusMap = new java.util.HashMap<>(Collections.emptyMap());
-        AtomicReference<Status> jobStatus = new AtomicReference<>(Status.DONE);
+        Map<Long, JobStatus> itemsStatusMap = new java.util.HashMap<>(Collections.emptyMap());
+        AtomicReference<JobStatus> jobStatus = new AtomicReference<>(JobStatus.DONE);
 
         results.forEach(result -> {
             var item = itemsDocsMap.get(result.docId());
 
             if (result.result() == null) {
-                jobStatus.set(Status.FAILED);
+                jobStatus.set(JobStatus.FAILED);
                 itemsStatusMap.put(
                         item.getId(),
-                        Status.FAILED
+                        JobStatus.FAILED
                 );
             } else {
                 itemsStatusMap.put(
                         item.getId(),
-                        Status.DONE
+                        JobStatus.DONE
                 );
             }
         });
@@ -183,18 +183,7 @@ public class DocumentWorker {
                 items.stream()
                         .map(OutboxJobItemEntity::getId)
                         .collect(Collectors.toList()),
-                Status.FAILED
-        );
-    }
-
-    private void markFailed(
-            List<Long> jobsId,
-            List<Long> itemsId
-    ) {
-        jobManagerService.updateJobAndItemStatus(
-                jobsId,
-                itemsId,
-                Status.FAILED
+                JobStatus.FAILED
         );
     }
 }

@@ -8,8 +8,9 @@ import org.pts.document.storage.model.entity.DocumentEntity;
 import org.pts.document.storage.model.entity.OutboxJobEntity;
 import org.pts.document.storage.model.entity.OutboxJobItemEntity;
 import org.pts.document.storage.model.entity.ProcessingRequest;
-import org.pts.document.storage.model.enums.Status;
-import org.pts.document.storage.model.enums.Type;
+import org.pts.document.storage.model.enums.DocumentStatus;
+import org.pts.document.storage.model.enums.JobStatus;
+import org.pts.document.storage.model.enums.JobType;
 import org.pts.document.storage.repository.DocumentRepository;
 import org.pts.document.storage.repository.OutboxItemRepository;
 import org.pts.document.storage.repository.OutboxRepository;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class JobManagerServiceImpl implements JobManagerService {
     private final RequestManagerService requestManagerService;
+
     private final DocumentRepository documentRepository;
     private final ProcessingRequestRepository processingRequestRepository;
     private final OutboxRepository outboxRepository;
@@ -42,8 +44,8 @@ public class JobManagerServiceImpl implements JobManagerService {
                 var batchDocuments = documentRepository.findAllByKeyIn(batch);
 
                 var job = OutboxJobEntity.builder()
-                        .type(Type.GET)
-                        .status(Status.NEW)
+                        .type(JobType.GET)
+                        .status(JobStatus.NEW)
                         .build();
 
                 job = outboxRepository.save(job);
@@ -55,7 +57,7 @@ public class JobManagerServiceImpl implements JobManagerService {
                     var jobItem = OutboxJobItemEntity.builder()
                             .jobId(job.getId())
                             .documentId(batchDocument.getId())
-                            .status(Status.NEW)
+                            .status(JobStatus.NEW)
                             .build();
 
                     items.add(jobItem);
@@ -92,8 +94,8 @@ public class JobManagerServiceImpl implements JobManagerService {
 
                 var job = OutboxJobEntity.builder()
                         .requestId(processingRequestId)
-                        .type(Type.UPLOAD)
-                        .status(Status.NEW)
+                        .type(JobType.UPLOAD)
+                        .status(JobStatus.NEW)
                         .build();
 
                 job = outboxRepository.save(job);
@@ -107,7 +109,7 @@ public class JobManagerServiceImpl implements JobManagerService {
                             .id(documentId)
                             .tempKey(doc.s3TempKey())
                             .tempBucket(doc.bucket())
-                            .status(Status.NEW)
+                            .status(DocumentStatus.NEW)
                             .build();
 
                     allDocuments.add(document);
@@ -115,7 +117,7 @@ public class JobManagerServiceImpl implements JobManagerService {
                     var jobItem = OutboxJobItemEntity.builder()
                             .jobId(job.getId())
                             .documentId(documentId)
-                            .status(Status.NEW)
+                            .status(JobStatus.NEW)
                             .build();
 
                     allJobItems.add(jobItem);
@@ -125,7 +127,7 @@ public class JobManagerServiceImpl implements JobManagerService {
             var processingRequest = ProcessingRequest.builder()
                     .id(UUID.randomUUID())
                     .totalJobs(allJobItems.size())
-                    .type(Type.UPLOAD)
+                    .type(JobType.UPLOAD)
                     .build();
 
             processingRequestRepository.save(processingRequest);
@@ -143,8 +145,8 @@ public class JobManagerServiceImpl implements JobManagerService {
     @Transactional
     @Override
     public Map<OutboxJobEntity, List<OutboxJobItemEntity>> takeForProcessing(
-            Type type,
-            Status status,
+            JobType type,
+            JobStatus status,
             int limit
     ) {
         try {
@@ -154,17 +156,25 @@ public class JobManagerServiceImpl implements JobManagerService {
                     limit
             );
 
-            jobs.forEach(job -> job.setStatus(Status.PROCESSING));
+            jobs.forEach(job -> job.setStatus(JobStatus.PROCESSING));
+
+            var requests = processingRequestRepository.findAllByIdIn(
+                    jobs.stream()
+                            .map(OutboxJobEntity::getRequestId)
+                            .toList()
+            );
+
+            requests.forEach(request -> request.setStatus(JobStatus.PROCESSING));
 
             var items = outboxItemRepository
-                    .findAllByJobIdInAndStatusContains(
+                    .findAllByJobIdInAndStatus(
                             jobs.stream()
                                     .map(OutboxJobEntity::getId)
                                     .toList(),
-                            Status.NEW
+                            JobStatus.NEW
                     );
 
-            items.forEach(item -> item.setStatus(status));
+            items.forEach(item -> item.setStatus(JobStatus.PROCESSING));
 
             Map<Long, List<OutboxJobItemEntity>> idsItemsMap = items
                     .stream()
@@ -183,43 +193,21 @@ public class JobManagerServiceImpl implements JobManagerService {
     @Transactional
     @Override
     public void updateJobAndItemStatus(
-            Long jobId,
-            Status jobStatus,
-            Map<Long, Status> itemsStatusMap
-    ) {
-        outboxRepository.updateStatus(jobId, jobStatus);
-
-        Map<Status, List<Long>> grouped = itemsStatusMap.entrySet().stream()
-                .collect(Collectors.groupingBy(
-                        Map.Entry::getValue,
-                        Collectors.mapping(Map.Entry::getKey, Collectors.toList())
-                ));
-
-
-        grouped.forEach((groupedStatus, ids) -> {
-            outboxItemRepository.updateStatus(ids, groupedStatus);
-        });
-    }
-
-    @Transactional
-    @Override
-    public void updateJobAndItemStatus(
             OutboxJobEntity job,
-            Status jobStatus,
-            Map<Long, Status> itemsStatusMap
+            JobStatus jobStatus,
+            Map<Long, JobStatus> itemsStatusMap
     ) {
         outboxRepository.updateStatus(job.getId(), jobStatus);
 
-        Map<Status, List<Long>> grouped = itemsStatusMap.entrySet().stream()
+        Map<JobStatus, List<Long>> grouped = itemsStatusMap.entrySet().stream()
                 .collect(Collectors.groupingBy(
                         Map.Entry::getValue,
                         Collectors.mapping(Map.Entry::getKey, Collectors.toList())
                 ));
 
 
-        grouped.forEach((groupedStatus, ids) -> {
-            outboxItemRepository.updateStatus(ids, groupedStatus);
-        });
+        grouped.forEach((groupedStatus, ids) ->
+                outboxItemRepository.updateStatus(ids, groupedStatus));
 
         requestManagerService.onJobCompleted(job.getRequestId());
     }
@@ -228,23 +216,23 @@ public class JobManagerServiceImpl implements JobManagerService {
     @Override
     public void updateJobAndItemStatus(
             Long jobId,
-            List<Long> itemsId,
-            Status status
+            List<Long> itemIds,
+            JobStatus status
     ) {
-        var updatedOutboxField = outboxRepository.updateStatus(jobId, status);
+        var updatedRows = outboxRepository.updateStatus(jobId, status);
 
-        if (updatedOutboxField == 0) {
+        if (updatedRows == 0) {
             throw new IllegalStateException(
                     "Failed to update outbox job. jobId=" + jobId
             );
         }
 
-        var updatedItemField = outboxItemRepository.updateStatus(itemsId, status);
+        var updatedItemsCount = outboxItemRepository.updateStatus(itemIds, status);
 
-        if (updatedItemField != itemsId.size()) {
+        if (updatedItemsCount != itemIds.size()) {
             throw new IllegalStateException(
-                    "Expected to update " + itemsId.size() +
-                            " outbox items but updated " + updatedItemField
+                    "Expected to update " + itemIds.size() +
+                            " outbox items but updated " + updatedItemsCount
             );
         }
     }
@@ -252,24 +240,24 @@ public class JobManagerServiceImpl implements JobManagerService {
     @Transactional
     @Override
     public void updateJobAndItemStatus(
-            List<Long> jobsId,
-            List<Long> itemsId,
-            Status status
+            List<Long> jobIds,
+            List<Long> itemIds,
+            JobStatus status
     ) {
-        var updatedOutboxField = outboxRepository.updateStatus(jobsId, status);
+        var updatedRows = outboxRepository.updateStatus(jobIds, status);
 
-        if (updatedOutboxField == 0) {
+        if (updatedRows == 0) {
             throw new IllegalStateException(
-                    "Failed to update outbox job. jobsId=" + jobsId
+                    "Failed to update outbox job. jobIds=" + jobIds
             );
         }
 
-        var updatedItemsField = outboxItemRepository.updateStatus(itemsId, status);
+        var updatedItemsCount = outboxItemRepository.updateStatus(itemIds, status);
 
-        if (updatedItemsField != itemsId.size()) {
+        if (updatedItemsCount != itemIds.size()) {
             throw new IllegalStateException(
-                    "Expected to update " + itemsId.size() +
-                            " outbox items but updated " + updatedItemsField
+                    "Expected to update " + itemIds.size() +
+                            " outbox items but updated " + updatedItemsCount
             );
         }
     }
@@ -277,11 +265,11 @@ public class JobManagerServiceImpl implements JobManagerService {
     @Transactional
     @Override
     public void updateJobAndItemStatusBatch(
-            Map<Long, Status> jobStatusMap,
-            Map<Long, Map<Long, Status>> itemsStatusByJob
+            Map<Long, JobStatus> jobStatusMap,
+            Map<Long, Map<Long, JobStatus>> itemsStatusByJob
     ) {
         try {
-            Map<Status, List<Long>> jobsGrouped = jobStatusMap.entrySet()
+            Map<JobStatus, List<Long>> jobsGrouped = jobStatusMap.entrySet()
                     .stream()
                     .collect(Collectors.groupingBy(
                             Map.Entry::getValue,
@@ -294,7 +282,7 @@ public class JobManagerServiceImpl implements JobManagerService {
                 }
             });
 
-            Map<Status, List<Long>> itemsGrouped = new HashMap<>();
+            Map<JobStatus, List<Long>> itemsGrouped = new HashMap<>();
             for (var entry : itemsStatusByJob.entrySet()) {
                 var perJobMap = entry.getValue();
                 if (perJobMap == null) continue;
@@ -312,7 +300,7 @@ public class JobManagerServiceImpl implements JobManagerService {
             });
 
             var doneJobIds = jobStatusMap.entrySet().stream()
-                    .filter(e -> e.getValue() == Status.DONE)
+                    .filter(e -> e.getValue() == JobStatus.DONE)
                     .map(Map.Entry::getKey)
                     .toList();
 
@@ -326,23 +314,6 @@ public class JobManagerServiceImpl implements JobManagerService {
         }
     }
 
-    //TODO убрать всю работу с document d DocService
-    @Override
-    public List<DocumentEntity> getDocument(UUID requestId) {
-        var jobs = outboxRepository.findAllByRequestId(requestId);
-        var items = outboxItemRepository.findAllByJobIdIn(
-                jobs.stream()
-                        .map(OutboxJobEntity::getId)
-                        .toList()
-        );
-
-        return documentRepository.
-                findAllByIdIn(
-                        items.stream()
-                                .map(OutboxJobItemEntity::getDocumentId)
-                                .toList()
-                );
-    }
 
     private <T> List<List<T>> chunk(List<T> list, int size) {
         List<List<T>> result = new ArrayList<>();
