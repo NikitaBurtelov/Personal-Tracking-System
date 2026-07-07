@@ -8,10 +8,8 @@ import org.pts.document.storage.model.entity.DocumentEntity;
 import org.pts.document.storage.model.entity.OutboxJobEntity;
 import org.pts.document.storage.model.entity.OutboxJobItemEntity;
 import org.pts.document.storage.model.entity.ProcessingRequest;
-import org.pts.document.storage.model.enums.DocumentStatus;
-import org.pts.document.storage.model.enums.OutboxJobStatus;
-import org.pts.document.storage.model.enums.OutboxJobType;
-import org.pts.document.storage.model.enums.RequestType;
+import org.pts.document.storage.model.enums.Status;
+import org.pts.document.storage.model.enums.Type;
 import org.pts.document.storage.repository.DocumentRepository;
 import org.pts.document.storage.repository.OutboxItemRepository;
 import org.pts.document.storage.repository.OutboxRepository;
@@ -44,8 +42,8 @@ public class JobManagerServiceImpl implements JobManagerService {
                 var batchDocuments = documentRepository.findAllByKeyIn(batch);
 
                 var job = OutboxJobEntity.builder()
-                        .type(OutboxJobType.GET)
-                        .status(OutboxJobStatus.NEW)
+                        .type(Type.GET)
+                        .status(Status.NEW)
                         .build();
 
                 job = outboxRepository.save(job);
@@ -57,7 +55,7 @@ public class JobManagerServiceImpl implements JobManagerService {
                     var jobItem = OutboxJobItemEntity.builder()
                             .jobId(job.getId())
                             .documentId(batchDocument.getId())
-                            .status(OutboxJobStatus.NEW)
+                            .status(Status.NEW)
                             .build();
 
                     items.add(jobItem);
@@ -67,7 +65,7 @@ public class JobManagerServiceImpl implements JobManagerService {
             }
 
             log.info("Tasks created: {} for request:{}", jobIds, msg.workId());
-        } catch(Exception e) {
+        } catch (Exception e) {
             log.error("Failed to create tasks for request:{}", msg.workId());
             throw new RuntimeException(e);
         }
@@ -94,8 +92,8 @@ public class JobManagerServiceImpl implements JobManagerService {
 
                 var job = OutboxJobEntity.builder()
                         .requestId(processingRequestId)
-                        .type(OutboxJobType.UPLOAD)
-                        .status(OutboxJobStatus.NEW)
+                        .type(Type.UPLOAD)
+                        .status(Status.NEW)
                         .build();
 
                 job = outboxRepository.save(job);
@@ -109,7 +107,7 @@ public class JobManagerServiceImpl implements JobManagerService {
                             .id(documentId)
                             .tempKey(doc.s3TempKey())
                             .tempBucket(doc.bucket())
-                            .status(DocumentStatus.NEW)
+                            .status(Status.NEW)
                             .build();
 
                     allDocuments.add(document);
@@ -117,7 +115,7 @@ public class JobManagerServiceImpl implements JobManagerService {
                     var jobItem = OutboxJobItemEntity.builder()
                             .jobId(job.getId())
                             .documentId(documentId)
-                            .status(OutboxJobStatus.NEW)
+                            .status(Status.NEW)
                             .build();
 
                     allJobItems.add(jobItem);
@@ -127,7 +125,7 @@ public class JobManagerServiceImpl implements JobManagerService {
             var processingRequest = ProcessingRequest.builder()
                     .id(UUID.randomUUID())
                     .totalJobs(allJobItems.size())
-                    .type(RequestType.UPLOAD)
+                    .type(Type.UPLOAD)
                     .build();
 
             processingRequestRepository.save(processingRequest);
@@ -135,7 +133,7 @@ public class JobManagerServiceImpl implements JobManagerService {
             outboxItemRepository.saveAll(allJobItems);
 
             log.info("Tasks created: {} for request:{}", jobIds, msg.workId());
-        } catch(Exception e) {
+        } catch (Exception e) {
             log.error("Failed to create tasks for request:{}", msg.workId());
             throw new RuntimeException(e);
         }
@@ -145,8 +143,8 @@ public class JobManagerServiceImpl implements JobManagerService {
     @Transactional
     @Override
     public Map<OutboxJobEntity, List<OutboxJobItemEntity>> takeForProcessing(
-            OutboxJobType type,
-            OutboxJobStatus status,
+            Type type,
+            Status status,
             int limit
     ) {
         try {
@@ -156,14 +154,14 @@ public class JobManagerServiceImpl implements JobManagerService {
                     limit
             );
 
-            jobs.forEach(job -> job.setStatus(OutboxJobStatus.PROCESSING));
+            jobs.forEach(job -> job.setStatus(Status.PROCESSING));
 
             var items = outboxItemRepository
                     .findAllByJobIdInAndStatusContains(
                             jobs.stream()
                                     .map(OutboxJobEntity::getId)
                                     .toList(),
-                            OutboxJobStatus.NEW
+                            Status.NEW
                     );
 
             items.forEach(item -> item.setStatus(status));
@@ -178,7 +176,7 @@ public class JobManagerServiceImpl implements JobManagerService {
                             job -> idsItemsMap.getOrDefault(job.getId(), List.of())
                     ));
         } catch (Exception e) {
-            throw  new RuntimeException(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -186,12 +184,12 @@ public class JobManagerServiceImpl implements JobManagerService {
     @Override
     public void updateJobAndItemStatus(
             Long jobId,
-            OutboxJobStatus jobStatus,
-            Map<Long, OutboxJobStatus> itemsStatusMap
+            Status jobStatus,
+            Map<Long, Status> itemsStatusMap
     ) {
         outboxRepository.updateStatus(jobId, jobStatus);
 
-        Map<OutboxJobStatus, List<Long>> grouped = itemsStatusMap.entrySet().stream()
+        Map<Status, List<Long>> grouped = itemsStatusMap.entrySet().stream()
                 .collect(Collectors.groupingBy(
                         Map.Entry::getValue,
                         Collectors.mapping(Map.Entry::getKey, Collectors.toList())
@@ -207,12 +205,12 @@ public class JobManagerServiceImpl implements JobManagerService {
     @Override
     public void updateJobAndItemStatus(
             OutboxJobEntity job,
-            OutboxJobStatus jobStatus,
-            Map<Long, OutboxJobStatus> itemsStatusMap
+            Status jobStatus,
+            Map<Long, Status> itemsStatusMap
     ) {
         outboxRepository.updateStatus(job.getId(), jobStatus);
 
-        Map<OutboxJobStatus, List<Long>> grouped = itemsStatusMap.entrySet().stream()
+        Map<Status, List<Long>> grouped = itemsStatusMap.entrySet().stream()
                 .collect(Collectors.groupingBy(
                         Map.Entry::getValue,
                         Collectors.mapping(Map.Entry::getKey, Collectors.toList())
@@ -231,7 +229,7 @@ public class JobManagerServiceImpl implements JobManagerService {
     public void updateJobAndItemStatus(
             Long jobId,
             List<Long> itemsId,
-            OutboxJobStatus status
+            Status status
     ) {
         var updatedOutboxField = outboxRepository.updateStatus(jobId, status);
 
@@ -256,7 +254,7 @@ public class JobManagerServiceImpl implements JobManagerService {
     public void updateJobAndItemStatus(
             List<Long> jobsId,
             List<Long> itemsId,
-            OutboxJobStatus status
+            Status status
     ) {
         var updatedOutboxField = outboxRepository.updateStatus(jobsId, status);
 
@@ -274,6 +272,76 @@ public class JobManagerServiceImpl implements JobManagerService {
                             " outbox items but updated " + updatedItemsField
             );
         }
+    }
+
+    @Transactional
+    @Override
+    public void updateJobAndItemStatusBatch(
+            Map<Long, Status> jobStatusMap,
+            Map<Long, Map<Long, Status>> itemsStatusByJob
+    ) {
+        try {
+            Map<Status, List<Long>> jobsGrouped = jobStatusMap.entrySet()
+                    .stream()
+                    .collect(Collectors.groupingBy(
+                            Map.Entry::getValue,
+                            Collectors.mapping(Map.Entry::getKey, Collectors.toList())
+                    ));
+
+            jobsGrouped.forEach((status, ids) -> {
+                if (ids != null && !ids.isEmpty()) {
+                    outboxRepository.updateStatus(ids, status);
+                }
+            });
+
+            Map<Status, List<Long>> itemsGrouped = new HashMap<>();
+            for (var entry : itemsStatusByJob.entrySet()) {
+                var perJobMap = entry.getValue();
+                if (perJobMap == null) continue;
+                for (var itemEntry : perJobMap.entrySet()) {
+                    var itemId = itemEntry.getKey();
+                    var itemStatus = itemEntry.getValue();
+                    itemsGrouped.computeIfAbsent(itemStatus, k -> new ArrayList<>()).add(itemId);
+                }
+            }
+
+            itemsGrouped.forEach((status, ids) -> {
+                if (ids != null && !ids.isEmpty()) {
+                    outboxItemRepository.updateStatus(ids, status);
+                }
+            });
+
+            var doneJobIds = jobStatusMap.entrySet().stream()
+                    .filter(e -> e.getValue() == Status.DONE)
+                    .map(Map.Entry::getKey)
+                    .toList();
+
+            if (!doneJobIds.isEmpty()) {
+                var doneJobs = outboxRepository.findAllById(doneJobIds);
+                doneJobs.forEach(job -> requestManagerService.onJobCompleted(job.getRequestId()));
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    //TODO убрать всю работу с document d DocService
+    @Override
+    public List<DocumentEntity> getDocument(UUID requestId) {
+        var jobs = outboxRepository.findAllByRequestId(requestId);
+        var items = outboxItemRepository.findAllByJobIdIn(
+                jobs.stream()
+                        .map(OutboxJobEntity::getId)
+                        .toList()
+        );
+
+        return documentRepository.
+                findAllByIdIn(
+                        items.stream()
+                                .map(OutboxJobItemEntity::getDocumentId)
+                                .toList()
+                );
     }
 
     private <T> List<List<T>> chunk(List<T> list, int size) {

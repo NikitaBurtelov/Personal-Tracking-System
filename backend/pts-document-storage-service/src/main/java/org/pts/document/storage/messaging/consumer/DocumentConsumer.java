@@ -8,12 +8,10 @@ import org.pts.document.storage.messaging.dto.GetDocumentSourceRequest;
 import org.pts.document.storage.service.outbox.JobManagerService;
 import org.springframework.kafka.annotation.KafkaHandler;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.UUID;
 
 @Component
 @KafkaListener(

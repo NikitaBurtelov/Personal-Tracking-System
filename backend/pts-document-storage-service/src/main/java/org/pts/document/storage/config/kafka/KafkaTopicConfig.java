@@ -9,7 +9,7 @@ import org.springframework.kafka.config.TopicBuilder;
 @Configuration
 @RequiredArgsConstructor
 public class KafkaTopicConfig {
-    private  final KafkaProperties kafkaProperties;
+    private final KafkaProperties kafkaProperties;
 
     @Bean
     public NewTopic documentEventsTopic() {

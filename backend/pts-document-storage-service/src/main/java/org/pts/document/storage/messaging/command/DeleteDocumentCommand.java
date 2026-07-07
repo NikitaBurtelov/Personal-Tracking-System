@@ -4,5 +4,5 @@ import java.util.UUID;
 
 public record DeleteDocumentCommand(
         UUID workId
-) implements  Command {
+) implements Command {
 }

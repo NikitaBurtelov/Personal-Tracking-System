@@ -21,6 +21,11 @@ public class SchedulerConfig {
     private final DocumentStorageApplicationProperties properties;
 
     @Bean
+    public Semaphore publicationEventProcessSemaphore() {
+        return new Semaphore(properties.getPublicationEventProcessSemaphoreSettings().getPermits());
+    }
+
+    @Bean
     public Semaphore uploadDocumentProcessSemaphore() {
         return new Semaphore(properties.getUploadDocumentProcessSemaphoreSettings().getPermits());
     }

@@ -16,6 +16,7 @@ public class DocumentStorageApplicationProperties {
     private SemaphoreSettings getDocumentProcessSemaphoreSettings = new SemaphoreSettings();
     private SemaphoreSettings deleteDocumentProcessSemaphoreSettings = new SemaphoreSettings();
     private SemaphoreSettings updateJobStatusProcessSemaphoreSettings = new SemaphoreSettings();
+    private SemaphoreSettings publicationEventProcessSemaphoreSettings = new SemaphoreSettings();
 
     @Setter
     @Getter

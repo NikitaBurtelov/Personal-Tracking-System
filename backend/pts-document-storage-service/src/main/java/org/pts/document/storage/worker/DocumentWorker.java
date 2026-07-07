@@ -4,11 +4,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.pts.document.storage.model.entity.OutboxJobEntity;
 import org.pts.document.storage.model.entity.OutboxJobItemEntity;
-import org.pts.document.storage.model.enums.OutboxJobStatus;
-import org.pts.document.storage.model.enums.OutboxJobType;
+import org.pts.document.storage.model.enums.Status;
+import org.pts.document.storage.model.enums.Type;
 import org.pts.document.storage.service.DocumentManagerService;
 import org.pts.document.storage.service.dto.UploadResult;
 import org.pts.document.storage.service.outbox.JobManagerService;
+import org.pts.document.storage.worker.process.PublishingEventProcessing;
+import org.pts.document.storage.worker.process.UpdateStatusProcessing;
+import org.pts.document.storage.worker.process.UploadDocumentProcessing;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
@@ -33,10 +36,30 @@ public class DocumentWorker {
     private final ThreadPoolTaskExecutor getDocumentProcessExecutor;
     private final Executor taskProcessExecutor; // virtual thread
 
+    private final PublishingEventProcessing publishingEventProcessing;
+    private final UploadDocumentProcessing uploadDocumentProcessing;
+    private final UpdateStatusProcessing updateStatusProcessing;
+
+    private final Semaphore publicationEventProcessSemaphore;
     private final Semaphore uploadDocumentProcessSemaphore;
     private final Semaphore deleteDocumentProcessSemaphore;
     private final Semaphore getDocumentProcessSemaphore;
     private final Semaphore updateJobStatusProcessSemaphore;
+
+    @Scheduled(fixedDelay = 1000)
+    public void publishingEventProcess() {
+        if (!publicationEventProcessSemaphore.tryAcquire()) {
+            return;
+        }
+
+        taskProcessExecutor.execute(() -> {
+            try {
+                publishingEventProcessing.execute();
+            } finally {
+                publicationEventProcessSemaphore.release();
+            }
+        });
+    }
 
     @Scheduled(fixedDelay = 1000)
     public void uploadDocumentProcess() {
@@ -46,7 +69,13 @@ public class DocumentWorker {
 
         uploadDocumentProcessExecutor.execute(() -> {
             try {
-                uploadProcessing();
+                // Stage 1: upload documents
+                var uploadResult = uploadDocumentProcessing.execute();
+
+                // Stage 2: update statuses based on upload results
+                if (uploadResult != null) {
+                    updateStatusProcessing.execute(uploadResult);
+                }
             } finally {
                 uploadDocumentProcessSemaphore.release();
             }
@@ -78,50 +107,17 @@ public class DocumentWorker {
 
         taskProcessExecutor.execute(() -> {
             try {
+                //TODO
             } finally {
                 updateJobStatusProcessSemaphore.release();
             }
         });
     }
 
-    private void uploadProcessing() {
-        var jobs = jobManagerService.takeForProcessing(
-                OutboxJobType.UPLOAD,
-                OutboxJobStatus.NEW,
-                10
-        );
-
-        var jobsId = jobs.keySet().stream().map(OutboxJobEntity::getId).toList();
-
-        log.info("Tasks: {} have been accepted for processing.", jobsId);
-
-        try {
-            jobs.forEach((job, items) -> {
-                var docs = items.stream().map(OutboxJobItemEntity::getDocumentId).toList();
-
-                var itemsDocsMap = items.stream()
-                        .collect(
-                                Collectors.toMap(
-                                        OutboxJobItemEntity::getDocumentId,
-                                        item -> item)
-                        );
-
-                var results = documentManagerService.uploadDocumentAsync(docs);
-
-                identifyAndUpdateStatus(job, itemsDocsMap, results);
-            });
-        } catch (Exception e) {
-            log.error("Failed to complete tasks: {} ", jobsId, e);
-            markFailed(
-                    jobs.keySet().stream().map(OutboxJobEntity::getId).toList(),
-                    jobs.values().stream().flatMap(List::stream).map(OutboxJobItemEntity::getId).toList());
-        }
-    }
-
     private void getDocumentProcessing() {
         var jobs = jobManagerService.takeForProcessing(
-                OutboxJobType.GET,
-                OutboxJobStatus.NEW,
+                Type.GET,
+                Status.NEW,
                 10
         );
 
@@ -151,22 +147,22 @@ public class DocumentWorker {
             Map<UUID, OutboxJobItemEntity> itemsDocsMap,
             List<UploadResult> results
     ) {
-        Map<Long, OutboxJobStatus> itemsStatusMap = new java.util.HashMap<>(Collections.emptyMap());
-        AtomicReference<OutboxJobStatus> jobStatus = new AtomicReference<>(OutboxJobStatus.DONE);
+        Map<Long, Status> itemsStatusMap = new java.util.HashMap<>(Collections.emptyMap());
+        AtomicReference<Status> jobStatus = new AtomicReference<>(Status.DONE);
 
         results.forEach(result -> {
             var item = itemsDocsMap.get(result.docId());
 
             if (result.result() == null) {
-                jobStatus.set(OutboxJobStatus.FAILED);
+                jobStatus.set(Status.FAILED);
                 itemsStatusMap.put(
                         item.getId(),
-                        OutboxJobStatus.FAILED
+                        Status.FAILED
                 );
             } else {
                 itemsStatusMap.put(
                         item.getId(),
-                        OutboxJobStatus.DONE
+                        Status.DONE
                 );
             }
         });
@@ -187,7 +183,7 @@ public class DocumentWorker {
                 items.stream()
                         .map(OutboxJobItemEntity::getId)
                         .collect(Collectors.toList()),
-                OutboxJobStatus.FAILED
+                Status.FAILED
         );
     }
 
@@ -198,7 +194,7 @@ public class DocumentWorker {
         jobManagerService.updateJobAndItemStatus(
                 jobsId,
                 itemsId,
-                OutboxJobStatus.FAILED
+                Status.FAILED
         );
     }
 }

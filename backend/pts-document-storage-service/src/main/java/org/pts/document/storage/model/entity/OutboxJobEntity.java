@@ -2,8 +2,8 @@ package org.pts.document.storage.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.pts.document.storage.model.enums.OutboxJobStatus;
-import org.pts.document.storage.model.enums.OutboxJobType;
+import org.pts.document.storage.model.enums.Status;
+import org.pts.document.storage.model.enums.Type;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -23,10 +23,10 @@ public class OutboxJobEntity {
     private UUID requestId;
     @Enumerated(EnumType.STRING)
     @Column(name = "type", unique = false, nullable = false)
-    private OutboxJobType type;
+    private Type type;
     @Enumerated(EnumType.STRING)
     @Column(name = "status", unique = false, nullable = false)
-    private OutboxJobStatus status;
+    private Status status;
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
     @Column(name = "updated_at", nullable = false)
@@ -35,7 +35,7 @@ public class OutboxJobEntity {
     @PrePersist
     protected void onCreate() {
         createdAt = Instant.now();
-        status = OutboxJobStatus.NEW;
+        status = Status.NEW;
         updateAt = createdAt;
     }
 }

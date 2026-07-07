@@ -1,5 +1,6 @@
 package org.pts.document.storage.config.app;
 
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.pts.document.storage.config.app.properties.DocumentStorageApplicationProperties;
@@ -13,6 +14,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 @RequiredArgsConstructor
 public class DocumentStorageConfig {
     private final DocumentStorageApplicationProperties properties;
+
+    @Bean
+    public JsonMapper jsonMapper() {
+        return JsonMapper.builder()
+                .findAndAddModules()
+                .build();
+    }
 
     @Bean
     public ExecutorService documentExecutorService() {

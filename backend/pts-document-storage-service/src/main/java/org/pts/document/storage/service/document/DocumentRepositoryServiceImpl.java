@@ -4,7 +4,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.pts.document.storage.model.entity.DocumentEntity;
-import org.pts.document.storage.model.enums.DocumentStatus;
+import org.pts.document.storage.model.enums.Status;
 import org.pts.document.storage.repository.DocumentRepository;
 import org.pts.document.storage.repository.OutboxRepository;
 import org.springframework.stereotype.Service;
@@ -33,10 +33,10 @@ public class DocumentRepositoryServiceImpl implements DocumentRepositoryService 
 
     @Transactional
     @Override
-    public void updateStatus(UUID idDocument, DocumentStatus documentStatus) {
+    public void updateStatus(UUID idDocument, Status Status) {
         var document = documentRepository.findById(idDocument)
                 .orElseThrow(() -> new EntityNotFoundException("Document not found id: " + idDocument));
 
-        document.setStatus(documentStatus);
+        document.setStatus(Status);
     }
 }

@@ -13,4 +13,6 @@ public interface DocumentRepository extends CrudRepository<DocumentEntity, UUID>
     DocumentEntity findAllByKey(String key);
 
     List<DocumentEntity> findAllByKeyIn(Collection<String> keys);
+
+    List<DocumentEntity> findAllByIdIn(Collection<UUID> ids);
 }

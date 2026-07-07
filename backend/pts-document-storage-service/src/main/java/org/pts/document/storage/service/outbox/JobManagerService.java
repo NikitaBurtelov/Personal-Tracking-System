@@ -2,14 +2,16 @@ package org.pts.document.storage.service.outbox;
 
 import org.pts.document.storage.messaging.command.UploadDocumentCommand;
 import org.pts.document.storage.messaging.dto.GetDocumentSourceRequest;
+import org.pts.document.storage.model.entity.DocumentEntity;
 import org.pts.document.storage.model.entity.OutboxJobEntity;
 import org.pts.document.storage.model.entity.OutboxJobItemEntity;
-import org.pts.document.storage.model.enums.OutboxJobStatus;
-import org.pts.document.storage.model.enums.OutboxJobType;
+import org.pts.document.storage.model.enums.Status;
+import org.pts.document.storage.model.enums.Type;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public interface JobManagerService {
     @Transactional
@@ -20,8 +22,8 @@ public interface JobManagerService {
 
     @Transactional
     Map<OutboxJobEntity, List<OutboxJobItemEntity>> takeForProcessing(
-            OutboxJobType type,
-            OutboxJobStatus status,
+            Type type,
+            Status status,
             int limit
     );
 
@@ -29,27 +31,35 @@ public interface JobManagerService {
     void updateJobAndItemStatus(
             Long jobId,
             List<Long> itemsId,
-            OutboxJobStatus status
+            Status status
     );
 
     @Transactional
     void updateJobAndItemStatus(
             Long jobId,
-            OutboxJobStatus status,
-            Map<Long, OutboxJobStatus> itemsStatusMap
+            Status status,
+            Map<Long, Status> itemsStatusMap
     );
 
     @Transactional
     void updateJobAndItemStatus(
             OutboxJobEntity job,
-            OutboxJobStatus status,
-            Map<Long, OutboxJobStatus> itemsStatusMap
+            Status status,
+            Map<Long, Status> itemsStatusMap
     );
 
     @Transactional
     void updateJobAndItemStatus(
             List<Long> jobId,
             List<Long> itemsId,
-            OutboxJobStatus status
+            Status status
     );
+
+    @Transactional
+    void updateJobAndItemStatusBatch(
+            Map<Long, Status> jobStatusMap,
+            Map<Long, Map<Long, Status>> itemsStatusByJob
+    );
+
+    List<DocumentEntity> getDocument(UUID requestId);
 }
