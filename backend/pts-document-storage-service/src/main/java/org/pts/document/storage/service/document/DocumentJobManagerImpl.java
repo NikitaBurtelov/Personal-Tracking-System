@@ -22,8 +22,8 @@ public class DocumentJobManagerImpl implements DocumentJobManager {
 
     @Transactional
     @Override
-    public List<DocumentEntity> getDocumentsByRequestId(UUID requestId) {
-        var jobs = outboxRepository.findAllByRequestId(requestId);
+    public List<DocumentEntity> getDocumentsByOperationId(UUID operationId) {
+        var jobs = outboxRepository.findAllByOperationId(operationId);
 
         var items = outboxItemRepository.findAllByJobIdIn(
                 jobs.stream()

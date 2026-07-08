@@ -48,5 +48,5 @@ public interface OutboxRepository extends JpaRepository<OutboxJobEntity, Long> {
             @Param("status") JobStatus status
     );
 
-    List<OutboxJobEntity> findAllByRequestId(UUID requestId);
+    List<OutboxJobEntity> findAllByOperationId(UUID operationId);
 }

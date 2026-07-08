@@ -26,4 +26,17 @@ public interface OutboxEventRepository extends JpaRepository<OutboxEventEntity, 
     List<OutboxEventEntity> findUnpublishedBatch(
             @Param("limit") int limit
     );
+
+    @Query(
+            value = """
+                    select *
+                    from document_storage_schema.outbox_event
+                    where published = false and operation_id in :ids
+                    for update skip locked
+                    """,
+            nativeQuery = true
+    )
+    List<OutboxEventEntity> findUnpublishedBatch(
+            @Param("ids") List<UUID> ids
+    );
 }

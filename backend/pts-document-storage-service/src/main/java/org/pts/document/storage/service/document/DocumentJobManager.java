@@ -9,9 +9,9 @@ public interface DocumentJobManager {
     /**
      * Retrieves all documents associated with a given processing request ID.
      *
-     * @param requestId the processing request ID
+     * @param operationId the processing request ID
      * @return list of DocumentEntity objects associated with the request
      */
-    List<DocumentEntity> getDocumentsByRequestId(UUID requestId);
+    List<DocumentEntity> getDocumentsByOperationId(UUID operationId);
 }
 

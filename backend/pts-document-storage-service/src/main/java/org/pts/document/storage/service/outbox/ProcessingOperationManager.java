@@ -4,8 +4,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
-public interface RequestManagerService {
+public interface ProcessingOperationManager {
 
     @Transactional
-    void onJobCompleted(UUID requestId);
+    void onJobCompleted(UUID operationId);
 }

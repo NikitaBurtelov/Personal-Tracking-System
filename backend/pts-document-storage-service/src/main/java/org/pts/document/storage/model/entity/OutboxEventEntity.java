@@ -20,11 +20,8 @@ public class OutboxEventEntity {
     @Column(columnDefinition = "uuid", updatable = false, nullable = false)
     private UUID id;
 
-    @Column(name = "request_id", nullable = false, updatable = false)
-    private UUID requestId;
-
-    @Column(columnDefinition = "jsonb", nullable = true)
-    private String payload;
+    @Column(name = "operation_id", nullable = false, updatable = false)
+    private UUID operationId;
 
     private EventStatus status;
 
@@ -40,7 +37,6 @@ public class OutboxEventEntity {
             id = UUID.randomUUID();
         }
         createdAt = Instant.now();
-        payload = null;
         updatedAt = createdAt;
     }
 

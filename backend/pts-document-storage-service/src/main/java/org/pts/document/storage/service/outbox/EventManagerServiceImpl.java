@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -23,14 +24,19 @@ public class EventManagerServiceImpl implements EventManagerService {
 
     @Transactional
     @Override
-    public void markEventAsPublished(OutboxEventEntity event) {
-        event.setPublished(true);
-        outboxEventRepository.save(event);
+    public List<OutboxEventEntity> getUnpublishedEvents(List<UUID> eventIds) {
+        return outboxEventRepository.findUnpublishedBatch(eventIds);
     }
 
     @Transactional
     @Override
-    public void markEventsAsPublished(List<OutboxEventEntity> events) {
+    public void markEventsAsPublished(List<UUID> eventsIds) {
+        var events = outboxEventRepository.findAllById(eventsIds);
+
+        if (events.isEmpty()) {
+            return;
+        }
+
         events.forEach(event -> event.setPublished(true));
 
         outboxEventRepository.saveAll(events);

@@ -64,10 +64,9 @@ public class DocumentServiceImpl implements DocumentService {
                 encryptedDataKey,
                 iv
         );
+        var tempKey = UUID.randomUUID() + originalFileName;
 
         try (s3ObjectStream; decryptS3ObjectStream) {
-            var tempKey = UUID.randomUUID() + originalFileName;
-
             storageService.putObject(
                     PutObjectRequest.builder()
                             .bucket(minIOProperties.getDocumentTempBucket().getBucketName())
@@ -80,10 +79,16 @@ public class DocumentServiceImpl implements DocumentService {
                     )
             );
 
-            return tempKey;
+
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+
+        document.setTempKey(tempKey);
+        document.setTempBucket(minIOProperties.getDocumentTempBucket().getBucketName());
+        documentRepositoryService.save(document);
+
+        return tempKey;
     }
 
     @Override

@@ -1,7 +1,6 @@
 package org.pts.document.storage.messaging.dto;
 
 import lombok.Builder;
-import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.UUID;
@@ -13,8 +12,9 @@ public record DocumentDataPayload(
         List<DocumentData> documentData
 ) {
     @Builder
-    public static class DocumentData {
-        String s3Key;
-        UUID id;
+    public record DocumentData(
+            String s3Key,
+            UUID id
+    ) {
     }
 }

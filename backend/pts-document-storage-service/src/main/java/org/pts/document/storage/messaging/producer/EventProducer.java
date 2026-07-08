@@ -19,10 +19,12 @@ public class EventProducer {
             KafkaEvent<T> event
     ) {
 
-        return kafkaTemplate.send(
-                topic,
-                key,
-                event
+        return kafkaTemplate.executeInTransaction(operations ->
+                operations.send(
+                    topic,
+                    key,
+                    event
+                )
         );
     }
 }

@@ -2,7 +2,7 @@ package org.pts.document.storage.service.document.security;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.pts.document.storage.model.dto.EncryptedPayload;
+import org.pts.document.storage.service.dto.EncryptedPayload;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 

@@ -2,10 +2,10 @@ package org.pts.document.storage.service.outbox;
 
 import org.pts.document.storage.messaging.command.UploadDocumentCommand;
 import org.pts.document.storage.messaging.dto.GetDocumentSourceRequest;
-import org.pts.document.storage.model.entity.OutboxJobEntity;
-import org.pts.document.storage.model.entity.OutboxJobItemEntity;
 import org.pts.document.storage.model.enums.JobStatus;
 import org.pts.document.storage.model.enums.JobType;
+import org.pts.document.storage.service.dto.JobContext;
+import org.pts.document.storage.service.dto.JobItemContext;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -19,24 +19,10 @@ public interface JobManagerService {
     void createUploadDocumentJob(UploadDocumentCommand msg);
 
     @Transactional
-    Map<OutboxJobEntity, List<OutboxJobItemEntity>> takeForProcessing(
+    Map<JobContext, List<JobItemContext>> takeForProcessing(
             JobType type,
             JobStatus status,
             int limit
-    );
-
-    @Transactional
-    void updateJobAndItemStatus(
-            Long jobId,
-            List<Long> itemIds,
-            JobStatus status
-    );
-
-    @Transactional
-    void updateJobAndItemStatus(
-            OutboxJobEntity job,
-            JobStatus status,
-            Map<Long, JobStatus> itemsStatusMap
     );
 
     @Transactional
@@ -49,6 +35,6 @@ public interface JobManagerService {
     @Transactional
     void updateJobAndItemStatusBatch(
             Map<Long, JobStatus> jobStatusMap,
-            Map<Long, Map<Long, JobStatus>> itemsStatusByJob
+            Map<Long, JobStatus> itemsStatusByJob
     );
 }

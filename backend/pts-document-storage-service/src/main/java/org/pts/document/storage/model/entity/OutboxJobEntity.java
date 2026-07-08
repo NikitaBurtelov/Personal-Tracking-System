@@ -19,8 +19,8 @@ public class OutboxJobEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(name = "request_id", columnDefinition = "uuid", unique = false, nullable = false)
-    private UUID requestId;
+    @Column(name = "operation_id", columnDefinition = "uuid", unique = false, nullable = false)
+    private UUID operationId;
     @Enumerated(EnumType.STRING)
     @Column(name = "type", unique = false, nullable = false)
     private JobType type;

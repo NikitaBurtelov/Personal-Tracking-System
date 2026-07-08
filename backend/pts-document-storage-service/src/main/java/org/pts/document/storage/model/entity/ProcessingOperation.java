@@ -9,13 +9,13 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "processing_request", schema = "document_storage_schema")
+@Table(name = "processing_operation", schema = "document_storage_schema")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProcessingRequest {
+public class ProcessingOperation {
 
     @Id
     @Column(columnDefinition = "uuid", updatable = false, nullable = false)
