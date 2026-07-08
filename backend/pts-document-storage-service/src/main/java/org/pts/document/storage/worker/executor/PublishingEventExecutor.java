@@ -1,5 +1,6 @@
 package org.pts.document.storage.worker.executor;
 
+import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.pts.document.storage.config.kafka.KafkaProperties;
@@ -18,14 +19,23 @@ public class PublishingEventExecutor {
 
     private final EventProducer eventProducer;
 
+    @Timed(
+            value = "executor.upload-document",
+            percentiles = {
+                    0.5,
+                    0.95,
+                    0.99
+            }
+    )
     public <T> void execute(List<KafkaEvent<T>> kafkaEvents) {
         try {
 
             var resultSending = kafkaEvents.stream().map(event ->
                     eventProducer.send(
-                        kafkaProperties.getDocumentEventsTopic().getName(),
-                        event.eventId().toString(),
-                        event)
+                            kafkaProperties.getDocumentEventsTopic().getName(),
+                            event.eventId().toString(),
+                            event
+                    )
             ).toList();
 
             CompletableFuture.allOf(

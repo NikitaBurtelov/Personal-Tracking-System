@@ -71,3 +71,11 @@ databaseChangeLog:
         - sqlFile:
             path: db/changelog/sql/008-update-event-table.sql
             relativeToChangelogFile: false
+
+  - changeSet:
+      id: 009-08-07-2026
+      author: document-storage-service
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/009-set-timezone.sql
+            relativeToChangelogFile: false

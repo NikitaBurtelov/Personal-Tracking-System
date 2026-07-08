@@ -1,5 +1,6 @@
 package org.pts.document.storage.service.document;
 
+import io.micrometer.core.annotation.Timed;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,14 @@ public class DocumentManagerServiceImpl implements DocumentManagerService {
     private final DocumentService documentService;
     private final ExecutorService documentExecutorService;
 
+    @Timed(
+            value = "document.upload-async",
+            percentiles = {
+                    0.5,
+                    0.95,
+                    0.99
+            }
+    )
     @Override
     public List<DocumentContext> uploadDocumentsAsync(List<UUID> documentIds) {
         log.info("Performing the document upload process, documentIds: {}", documentIds);
@@ -55,6 +64,14 @@ public class DocumentManagerServiceImpl implements DocumentManagerService {
                 .join();
     }
 
+    @Timed(
+            value = "document.fetch-async",
+            percentiles = {
+                    0.5,
+                    0.95,
+                    0.99
+            }
+    )
     @Override
     public List<DocumentContext> fetchDocumentsAsync(List<UUID> documentIds) {
         List<CompletableFuture<DocumentContext>> futures = documentIds.stream()

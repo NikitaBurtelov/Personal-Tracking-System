@@ -1,5 +1,6 @@
 package org.pts.document.storage.messaging.consumer;
 
+import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.pts.document.storage.messaging.command.DeleteDocumentCommand;
@@ -24,6 +25,14 @@ import java.io.IOException;
 public class DocumentConsumer {
     private final JobManagerService jobManagerService;
 
+    @Timed(
+            value = "messaging.document.upload-command",
+            percentiles = {
+                    0.5,
+                    0.95,
+                    0.99
+            }
+    )
     @KafkaHandler
     public void uploadDocumentSource(
             @Payload UploadDocumentCommand message

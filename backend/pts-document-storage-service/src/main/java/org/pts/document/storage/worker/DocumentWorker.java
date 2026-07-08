@@ -1,5 +1,6 @@
 package org.pts.document.storage.worker;
 
+import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.pts.document.storage.model.dto.JobExecutionResult;
@@ -37,7 +38,15 @@ public class DocumentWorker {
     private final Semaphore getDocumentProcessSemaphore;
     private final Semaphore updateJobStatusProcessSemaphore;
 
-    @Scheduled(fixedDelay = 1000)
+    @Timed(
+            value = "process.upload-document",
+            percentiles = {
+                    0.5,
+                    0.95,
+                    0.99
+            }
+    )
+    @Scheduled(fixedDelay = 500)
     public void uploadDocumentProcess() {
         if (!uploadDocumentProcessSemaphore.tryAcquire()) {
             return;
@@ -47,81 +56,87 @@ public class DocumentWorker {
             try {
                 // Stage 1: upload documents
                 var uploadResult = uploadDocumentExecutor.execute();
-                log.info("Step1");
+
                 if (uploadResult == null || uploadResult.isEmpty()) {
                     return;
                 }
 
                 // Stage 2: update statuses based on upload results
                 updateJobStatusExecutor.execute(uploadResult);
-                log.info("Step2");
                 // Stage 3: build message
                 var eventIds = uploadResult.stream().map(JobExecutionResult::eventId).toList();
 
                 var message = documentMessageBuilderExecutor.buildUploadMessage(eventIds);
-                log.info("Step3");
                 if (message == null || message.isEmpty()) {
                     return;
                 }
-
                 // Stage 4: send message
                 publishingEventExecutor.execute(message);
-                log.info("Step4");
                 // Stage 5: update event status
                 updateProcessingOperationStatusExecutor.execute(eventIds);
-                log.info("Step5");
-
+            } catch (Exception e) {
+                log.error("Error in uploadDocumentProcess: ", e);
             } finally {
                 uploadDocumentProcessSemaphore.release();
             }
         });
     }
 
-//    @Scheduled(fixedDelay = 2000)
-//    public void getDocumentProcess() {
-//
-//        if (!getDocumentProcessSemaphore.tryAcquire()) {
-//            return;
-//        }
-//
-//        threadPoolGetDocumentProcessExecutor.execute(() -> {
-//            try {
-//                var getDocumentResult = getDocumentExecutor.execute();
-//
-//                if (getDocumentResult == null || getDocumentResult.isEmpty()) {
-//                    return;
-//                }
-//
-//                updateJobStatusExecutor.execute(getDocumentResult);
-//
-//                var eventIds = getDocumentResult.stream().map(JobExecutionResult::eventId).toList();
-//
-//                var message = documentMessageBuilderExecutor.buildGetMessage(eventIds);
-//
-//                // Stage 4: send message
-//                publishingEventExecutor.execute(message);
-//
-//                // Stage 5: update event status
-//                updateProcessingOperationStatusExecutor.execute(eventIds);
-//            } finally {
-//                getDocumentProcessSemaphore.release();
-//            }
-//        });
-//    }
-//
-//    @Scheduled(fixedDelay = 10000)
-//    public void jobProcess() {
-//
-//        if (!updateJobStatusProcessSemaphore.tryAcquire()) {
-//            return;
-//        }
-//
-//        virtualThreadPoolTaskProcessExecutor.execute(() -> {
-//            try {
-//                //TODO
-//            } finally {
-//                updateJobStatusProcessSemaphore.release();
-//            }
-//        });
-//    }
+    @Timed(
+            value = "process.get-document",
+            percentiles = {
+                    0.5,
+                    0.95,
+                    0.99
+            }
+    )
+    @Scheduled(fixedDelay = 2000)
+    public void getDocumentProcess() {
+
+        if (!getDocumentProcessSemaphore.tryAcquire()) {
+            return;
+        }
+
+        threadPoolGetDocumentProcessExecutor.execute(() -> {
+            try {
+                var getDocumentResult = getDocumentExecutor.execute();
+
+                if (getDocumentResult == null || getDocumentResult.isEmpty()) {
+                    return;
+                }
+
+                updateJobStatusExecutor.execute(getDocumentResult);
+
+                var eventIds = getDocumentResult.stream().map(JobExecutionResult::eventId).toList();
+
+                var message = documentMessageBuilderExecutor.buildGetMessage(eventIds);
+
+                // Stage 4: send message
+                publishingEventExecutor.execute(message);
+
+                // Stage 5: update event status
+                updateProcessingOperationStatusExecutor.execute(eventIds);
+            } catch (Exception e) {
+                log.error("Error in getDocumentProcess: ", e);
+            } finally {
+                getDocumentProcessSemaphore.release();
+            }
+        });
+    }
+
+    @Scheduled(fixedDelay = 10000)
+    public void jobProcess() {
+
+        if (!updateJobStatusProcessSemaphore.tryAcquire()) {
+            return;
+        }
+
+        virtualThreadPoolTaskProcessExecutor.execute(() -> {
+            try {
+                //TODO
+            } finally {
+                updateJobStatusProcessSemaphore.release();
+            }
+        });
+    }
 }

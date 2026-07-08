@@ -24,6 +24,7 @@ public class ProcessingOperationManagerImpl implements ProcessingOperationManage
         String status = requestRepository.completeJob(operationId);
 
         if (status.equals(JobStatus.DONE.getStatus())) {
+            log.debug("Job completed successfully, operationId: {}", operationId);
             outboxEventRepository.save(
                     OutboxEventEntity.builder()
                             .operationId(operationId)

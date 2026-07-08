@@ -57,5 +57,14 @@ util-dotenv = {module = "io.github.cdimascio:dotenv-kotlin", version = "6.4.1"}
 # Test
 spring-test = { module = "org.springframework.boot:spring-boot-starter-test" }
 test-junit = { module = "org.junit.jupiter:junit-jupiter", version = "5.11.0" }
+micrometer-registry = { module = "io.micrometer:micrometer-registry-prometheus" }
+micrometer-core = { module = "io.micrometer:micrometer-core" }
 test-mockito = { module = "org.mockito:mockito-core", version = "5.12.0" }
 test-mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version = "5.3.1" }
+
+# Test container
+spring-testcontainers = { module = "org.springframework.boot:spring-boot-testcontainers" }
+testcontainers-junit = { module = "org.testcontainers:testcontainers-junit-jupiter" }
+testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql" }
+testcontainers-minio = { module = "org.testcontainers:testcontainers-minio" }
+testcontainers-kafka = { module = "org.testcontainers:testcontainers-kafka" }

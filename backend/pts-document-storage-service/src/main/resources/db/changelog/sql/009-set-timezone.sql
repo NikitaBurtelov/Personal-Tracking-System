@@ -1,0 +1,2 @@
+ALTER DATABASE pts
+SET timezone TO 'UTC';

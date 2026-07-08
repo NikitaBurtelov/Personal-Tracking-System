@@ -44,8 +44,13 @@ public class JobManagerServiceImpl implements JobManagerService {
     public void createGetDocumentJob(GetDocumentSourceRequest msg) {
         try {
             if (processingOperationRepository.findById(msg.workId()).isPresent()) {
+                log.debug("Processing operation already exists for workId: {}", msg.workId());
                 return;
             }
+
+            log.debug("Processing upload document request-id: {} request-payload: {}",
+                    msg.workId(),
+                    msg.s3Keys().toString());
 
             var batches = chunk(msg.s3Keys(), 10);
             var jobIds = new ArrayList<Long>();
@@ -86,8 +91,7 @@ public class JobManagerServiceImpl implements JobManagerService {
 
             log.info("Tasks created: {} for request:{}", jobIds, msg.workId());
         } catch (Exception e) {
-            log.error("Failed to create tasks for request:{}", msg.workId());
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to create tasks for request:{}" + msg.workId(), e);
         }
     }
 
@@ -96,8 +100,14 @@ public class JobManagerServiceImpl implements JobManagerService {
     public void createUploadDocumentJob(UploadDocumentCommand msg) {
         try {
             if (processingOperationRepository.findById(msg.workId()).isPresent()) {
+                log.info("Processing operation already exists for workId: {}", msg.workId());
                 return;
             }
+
+            log.debug("Processing upload document request-id: {} request-payload: {}",
+                    msg.workId(),
+                    msg.payload().toString()
+            );
 
             List<UploadDocumentCommand.PayloadDocumentsUpload.Document> docs = msg.payload().documents();
 
@@ -153,8 +163,7 @@ public class JobManagerServiceImpl implements JobManagerService {
 
             log.info("Tasks created: {} for request:{}", jobIds, msg.workId());
         } catch (Exception e) {
-            log.error("Failed to create tasks for request:{}", msg.workId());
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to create tasks for request:{}" + msg.workId(), e);
         }
 
     }
@@ -172,6 +181,8 @@ public class JobManagerServiceImpl implements JobManagerService {
                     status.getStatus(),
                     limit
             );
+
+            log.debug("Found {} jobs for processing of type {} and status {}", jobs.size(), type, status);
 
             jobs.forEach(job -> job.setStatus(JobStatus.PROCESSING));
 
@@ -261,7 +272,7 @@ public class JobManagerServiceImpl implements JobManagerService {
                             Map.Entry::getValue,
                             Collectors.mapping(Map.Entry::getKey, Collectors.toList())
                     ));
-
+            log.debug("Updating job statuses: {}", jobsGrouped);
             jobsGrouped.forEach((status, ids) -> {
                 if (ids != null && !ids.isEmpty()) {
                     outboxRepository.updateStatus(ids, status);
@@ -280,7 +291,7 @@ public class JobManagerServiceImpl implements JobManagerService {
                     outboxItemRepository.updateStatus(ids, status);
                 }
             });
-
+            log.debug("Updated item statuses: {}", itemsGrouped);
             var doneJobIds = jobStatusMap.entrySet().stream()
                     .filter(e -> e.getValue() == JobStatus.DONE)
                     .map(Map.Entry::getKey)

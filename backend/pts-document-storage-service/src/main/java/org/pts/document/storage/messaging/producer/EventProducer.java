@@ -21,9 +21,9 @@ public class EventProducer {
 
         return kafkaTemplate.executeInTransaction(operations ->
                 operations.send(
-                    topic,
-                    key,
-                    event
+                        topic,
+                        key,
+                        event
                 )
         );
     }
