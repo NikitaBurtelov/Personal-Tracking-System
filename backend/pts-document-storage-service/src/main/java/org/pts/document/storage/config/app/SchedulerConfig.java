@@ -21,6 +21,11 @@ public class SchedulerConfig {
     private final DocumentStorageApplicationProperties properties;
 
     @Bean
+    public Semaphore publicationEventProcessSemaphore() {
+        return new Semaphore(properties.getPublicationEventProcessSemaphoreSettings().getPermits());
+    }
+
+    @Bean
     public Semaphore uploadDocumentProcessSemaphore() {
         return new Semaphore(properties.getUploadDocumentProcessSemaphoreSettings().getPermits());
     }
@@ -49,7 +54,7 @@ public class SchedulerConfig {
     }
 
     @Bean
-    public ThreadPoolTaskExecutor uploadDocumentProcessExecutor() {
+    public ThreadPoolTaskExecutor threadPoolUploadDocumentProcessExecutor() {
         var executorSettings = properties.getUploadDocumentProcessExecutorSettings();
 
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
@@ -68,7 +73,7 @@ public class SchedulerConfig {
     }
 
     @Bean
-    public ThreadPoolTaskExecutor getDocumentProcessExecutor() {
+    public ThreadPoolTaskExecutor threadPoolGetDocumentProcessExecutor() {
         var executorSettings = properties.getGetDocumentProcessExecutorSettings();
 
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
@@ -87,7 +92,7 @@ public class SchedulerConfig {
     }
 
     @Bean
-    public Executor taskProcessExecutor() {
+    public Executor virtualThreadPoolTaskProcessExecutor() {
         return Executors.newVirtualThreadPerTaskExecutor();
     }
 }

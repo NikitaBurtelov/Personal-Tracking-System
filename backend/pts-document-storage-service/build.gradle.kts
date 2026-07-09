@@ -8,8 +8,10 @@ group = "${rootProject.group}.document.storage"
 version = rootProject.version
 
 dependencies {
-    implementation(libs.spring.amqp)
     implementation(libs.spring.doc)
+    implementation(libs.spring.web.flux)
+    implementation(libs.spring.config)
+    implementation(libs.spring.kafka)
     implementation(libs.spring.actuator)
     implementation(libs.spring.validation)
     implementation(libs.spring.jdbc)
@@ -29,11 +31,26 @@ dependencies {
 
     developmentOnly(libs.spring.devtools)
 
+    implementation(libs.micrometer.core)
+    implementation(libs.micrometer.registry)
+
     testImplementation(libs.spring.test)
+    testCompileOnly(libs.util.lombok)
+    testAnnotationProcessor(libs.util.lombok)
+
+    testImplementation(libs.spring.testcontainers)
+    testImplementation(libs.testcontainers.junit)
+    testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.testcontainers.kafka)
+    testImplementation(libs.testcontainers.minio)
 }
 
 tasks.withType<org.springframework.boot.gradle.tasks.bundling.BootJar> {
     mainClass.set("org.pts.document.storage.DocumentStorageApplication")
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
 }
 
 tasks.register("serviceInfo") {

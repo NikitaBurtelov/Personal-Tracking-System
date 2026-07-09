@@ -2,11 +2,16 @@ package org.pts.document.storage.model.enums;
 
 import lombok.Getter;
 
+/**
+ * Status enum for document lifecycle.
+ * Documents transition through states: NEW -> UPLOADING -> UPLOADED -> DONE
+ */
 @Getter
 public enum DocumentStatus {
     NEW("NEW"),
     UPLOADING("UPLOADING"),
     UPLOADED("UPLOADED"),
+    DONE("DONE"),
     FAILED("FAILED");
 
     private final String status;
@@ -15,3 +20,4 @@ public enum DocumentStatus {
         this.status = status;
     }
 }
+

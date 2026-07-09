@@ -1,10 +1,15 @@
 package org.pts.document.storage.config.app;
 
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import jakarta.persistence.EntityManagerFactory;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.pts.document.storage.config.app.properties.DocumentStorageApplicationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -13,6 +18,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 @RequiredArgsConstructor
 public class DocumentStorageConfig {
     private final DocumentStorageApplicationProperties properties;
+
+    @Bean
+    @Primary
+    public PlatformTransactionManager transactionManager(
+            EntityManagerFactory emf) {
+        return new JpaTransactionManager(emf);
+    }
+
+    @Bean
+    public JsonMapper jsonMapper() {
+        return JsonMapper.builder()
+                .findAndAddModules()
+                .build();
+    }
 
     @Bean
     public ExecutorService documentExecutorService() {

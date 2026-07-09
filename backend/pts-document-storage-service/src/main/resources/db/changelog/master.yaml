@@ -39,3 +39,43 @@ databaseChangeLog:
         - sqlFile:
             path: db/changelog/sql/004-update-table-outbox-item.sql
             relativeToChangelogFile: false
+
+  - changeSet:
+      id: 005-07-07-2026
+      author: document-storage-service
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/005-create-table-request.sql
+            relativeToChangelogFile: false
+
+  - changeSet:
+      id: 006-07-07-2026
+      author: document-storage-service
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/006-create-table-event.sql
+            relativeToChangelogFile: false
+
+  - changeSet:
+      id: 007-07-07-2026
+      author: document-storage-service
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/007-update-table.sql
+            relativeToChangelogFile: false
+
+  - changeSet:
+      id: 008-07-07-2026
+      author: document-storage-service
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/008-update-event-table.sql
+            relativeToChangelogFile: false
+
+  - changeSet:
+      id: 009-08-07-2026
+      author: document-storage-service
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/009-set-timezone.sql
+            relativeToChangelogFile: false

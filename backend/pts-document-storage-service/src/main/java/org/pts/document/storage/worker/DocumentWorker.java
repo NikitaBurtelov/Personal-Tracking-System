@@ -1,26 +1,18 @@
 package org.pts.document.storage.worker;
 
+import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.pts.document.storage.model.entity.OutboxJobEntity;
-import org.pts.document.storage.model.entity.OutboxJobItemEntity;
-import org.pts.document.storage.model.enums.OutboxJobStatus;
-import org.pts.document.storage.model.enums.OutboxJobType;
-import org.pts.document.storage.service.DocumentManagerService;
-import org.pts.document.storage.service.dto.UploadResult;
+import org.pts.document.storage.model.dto.JobExecutionResult;
+import org.pts.document.storage.service.document.DocumentManagerService;
 import org.pts.document.storage.service.outbox.JobManagerService;
+import org.pts.document.storage.worker.executor.*;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 @Component
 @Slf4j
@@ -29,30 +21,75 @@ public class DocumentWorker {
     private final DocumentManagerService documentManagerService;
     private final JobManagerService jobManagerService;
 
-    private final ThreadPoolTaskExecutor uploadDocumentProcessExecutor;
-    private final ThreadPoolTaskExecutor getDocumentProcessExecutor;
-    private final Executor taskProcessExecutor; // virtual thread
+    private final ThreadPoolTaskExecutor threadPoolUploadDocumentProcessExecutor;
+    private final ThreadPoolTaskExecutor threadPoolGetDocumentProcessExecutor;
+    private final Executor virtualThreadPoolTaskProcessExecutor; // virtual thread
 
+    private final DocumentMessageBuilderExecutor documentMessageBuilderExecutor;
+    private final PublishingEventExecutor publishingEventExecutor;
+    private final UploadDocumentExecutor uploadDocumentExecutor;
+    private final GetDocumentExecutor getDocumentExecutor;
+    private final UpdateJobStatusExecutor updateJobStatusExecutor;
+    private final UpdateProcessingOperationStatusExecutor updateProcessingOperationStatusExecutor;
+
+    private final Semaphore publicationEventProcessSemaphore;
     private final Semaphore uploadDocumentProcessSemaphore;
     private final Semaphore deleteDocumentProcessSemaphore;
     private final Semaphore getDocumentProcessSemaphore;
     private final Semaphore updateJobStatusProcessSemaphore;
 
-    @Scheduled(fixedDelay = 1000)
+    @Timed(
+            value = "process.upload-document",
+            percentiles = {
+                    0.5,
+                    0.95,
+                    0.99
+            }
+    )
+    @Scheduled(fixedDelay = 500)
     public void uploadDocumentProcess() {
         if (!uploadDocumentProcessSemaphore.tryAcquire()) {
             return;
         }
 
-        uploadDocumentProcessExecutor.execute(() -> {
+        threadPoolUploadDocumentProcessExecutor.execute(() -> {
             try {
-                uploadProcessing();
+                // Stage 1: upload documents
+                var uploadResult = uploadDocumentExecutor.execute();
+
+                if (uploadResult == null || uploadResult.isEmpty()) {
+                    return;
+                }
+
+                // Stage 2: update statuses based on upload results
+                updateJobStatusExecutor.execute(uploadResult);
+                // Stage 3: build message
+                var eventIds = uploadResult.stream().map(JobExecutionResult::eventId).toList();
+
+                var message = documentMessageBuilderExecutor.buildUploadMessage(eventIds);
+                if (message == null || message.isEmpty()) {
+                    return;
+                }
+                // Stage 4: send message
+                publishingEventExecutor.execute(message);
+                // Stage 5: update event status
+                updateProcessingOperationStatusExecutor.execute(eventIds);
+            } catch (Exception e) {
+                log.error("Error in uploadDocumentProcess: ", e);
             } finally {
                 uploadDocumentProcessSemaphore.release();
             }
         });
     }
 
+    @Timed(
+            value = "process.get-document",
+            percentiles = {
+                    0.5,
+                    0.95,
+                    0.99
+            }
+    )
     @Scheduled(fixedDelay = 2000)
     public void getDocumentProcess() {
 
@@ -60,9 +97,27 @@ public class DocumentWorker {
             return;
         }
 
-        getDocumentProcessExecutor.execute(() -> {
+        threadPoolGetDocumentProcessExecutor.execute(() -> {
             try {
-                getDocumentProcessing();
+                var getDocumentResult = getDocumentExecutor.execute();
+
+                if (getDocumentResult == null || getDocumentResult.isEmpty()) {
+                    return;
+                }
+
+                updateJobStatusExecutor.execute(getDocumentResult);
+
+                var eventIds = getDocumentResult.stream().map(JobExecutionResult::eventId).toList();
+
+                var message = documentMessageBuilderExecutor.buildGetMessage(eventIds);
+
+                // Stage 4: send message
+                publishingEventExecutor.execute(message);
+
+                // Stage 5: update event status
+                updateProcessingOperationStatusExecutor.execute(eventIds);
+            } catch (Exception e) {
+                log.error("Error in getDocumentProcess: ", e);
             } finally {
                 getDocumentProcessSemaphore.release();
             }
@@ -76,112 +131,12 @@ public class DocumentWorker {
             return;
         }
 
-        taskProcessExecutor.execute(() -> {
+        virtualThreadPoolTaskProcessExecutor.execute(() -> {
             try {
+                //TODO
             } finally {
                 updateJobStatusProcessSemaphore.release();
             }
         });
-    }
-
-    private void uploadProcessing() {
-        var jobs = jobManagerService.takeForProcessing(
-                OutboxJobType.UPLOAD,
-                OutboxJobStatus.NEW,
-                10
-        );
-
-        jobs.forEach((job, items) -> {
-            try {
-                var docs = items.stream().map(OutboxJobItemEntity::getDocumentId).toList();
-
-                var itemsDocsMap = items.stream()
-                        .collect(
-                                Collectors.toMap(
-                                        OutboxJobItemEntity::getDocumentId,
-                                        item -> item)
-                        );
-
-                var results = documentManagerService.uploadDocumentAsync(docs);
-
-                identifyAndUpdateStatus(job, itemsDocsMap, results);
-
-            } catch (Exception e) {
-                markFailed(job, items);
-            }
-        });
-    }
-
-    private void getDocumentProcessing() {
-        var jobs = jobManagerService.takeForProcessing(
-                OutboxJobType.GET,
-                OutboxJobStatus.NEW,
-                10
-        );
-
-        jobs.forEach((job, items) -> {
-            try {
-                var docs = items.stream().map(OutboxJobItemEntity::getDocumentId).toList();
-
-                var itemsDocsMap = items.stream()
-                        .collect(
-                                Collectors.toMap(
-                                        OutboxJobItemEntity::getDocumentId,
-                                        item -> item)
-                        );
-
-                var results = documentManagerService.getDocumentAsync(docs);
-
-                identifyAndUpdateStatus(job, itemsDocsMap, results);
-
-            } catch (Exception e) {
-                markFailed(job, items);
-            }
-        });
-    }
-
-    private void identifyAndUpdateStatus(
-            OutboxJobEntity job,
-            Map<UUID, OutboxJobItemEntity> itemsDocsMap,
-            List<UploadResult> results
-    ) {
-        Map<Long, OutboxJobStatus> itemsStatusMap = new java.util.HashMap<>(Collections.emptyMap());
-        AtomicReference<OutboxJobStatus> jobStatus = new AtomicReference<>(OutboxJobStatus.DONE);
-
-        results.forEach(result -> {
-            var item = itemsDocsMap.get(result.docId());
-
-            if (result.result() == null) {
-                jobStatus.set(OutboxJobStatus.FAILED);
-                itemsStatusMap.put(
-                        item.getId(),
-                        OutboxJobStatus.FAILED
-                );
-            } else {
-                itemsStatusMap.put(
-                        item.getId(),
-                        OutboxJobStatus.DONE
-                );
-            }
-        });
-
-        jobManagerService.updateJobAndItemStatus(
-                job.getId(),
-                jobStatus.get(),
-                itemsStatusMap
-        );
-    }
-
-    private void markFailed(
-            OutboxJobEntity job,
-            List<OutboxJobItemEntity> items
-    ) {
-        jobManagerService.updateJobAndItemStatus(
-                job.getId(),
-                items.stream()
-                        .map(OutboxJobItemEntity::getId)
-                        .collect(Collectors.toList()),
-                OutboxJobStatus.FAILED
-        );
     }
 }

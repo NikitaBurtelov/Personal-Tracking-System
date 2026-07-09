@@ -13,5 +13,5 @@ public interface DocumentRepositoryService {
     DocumentEntity get(UUID id);
 
     @Transactional
-    void updateStatus(UUID idDocument, DocumentStatus documentStatus);
+    void updateStatus(UUID documentId, DocumentStatus documentStatus);
 }

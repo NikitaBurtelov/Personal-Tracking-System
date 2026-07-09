@@ -17,7 +17,8 @@ spring-jdbc = {module = "org.springframework.boot:spring-boot-starter-jdbc" }
 spring-security = {module = "org.springframework.boot:spring-boot-starter-security" }
 spring-devtools = {module = "org.springframework.boot:spring-boot-devtools" }
 spring-oauth2 = {module = "org.springframework.boot:spring-boot-starter-oauth2-resource-server" }
-spring-kafka = {module = "org.springframework.kafka:spring-kafka"}
+spring-kafka = {module = "org.springframework.boot:spring-boot-starter-kafka"}
+spring-config = {module = "org.springframework.boot:spring-boot-configuration-processor"}
 spring-expression = {module = "org.springframework:spring-expression" }
 spring-retry = {module = "org.springframework.retry:spring-retry" }
 spring-redis = {module = "org.springframework.boot:spring-boot-starter-data-redis" }
@@ -34,7 +35,6 @@ infra-awssdk-s3 = { module = "software.amazon.awssdk:s3", version = "2.40.2" }
 infra-awssdk-client-netty = { module = "software.amazon.awssdk:netty-nio-client", version = "2.40.2" }
 infra-awssdk-client-apache = { module = "software.amazon.awssdk:apache-client", version = "2.40.2" }
 infra-awssdk-client-spi = { module = "software.amazon.awssdk:http-client-spi", version = "2.40.2" }
-infra-kafka = { module = "org.springframework.kafka:spring-kafka" }
 infra-retry = { module = "org.springframework.retry:spring-retry" }
 infra-liquibase = { module = "org.springframework.boot:spring-boot-starter-liquibase" }
 
@@ -48,7 +48,7 @@ util-lombok = { module = "org.projectlombok:lombok" }
 util-jjwt-api = { module = "io.jsonwebtoken:jjwt-api", version = "0.11.5" }
 util-jjwt-impl = { module = "io.jsonwebtoken:jjwt-impl", version = "0.11.5" }
 util-jjwt-jackson = { module = "io.jsonwebtoken:jjwt-jackson", version = "0.11.5" }
-util-jackson = { module = "tools.jackson.core:jackson-databind", version = "3.2.0" }
+util-jackson = { module = "tools.jackson.core:jackson-databind" }
 util-bucket4j-core = { module = "com.bucket4j:bucket4j_jdk17-core", version = "8.18.0" }
 util-bucket4j-lettuce = { module = "com.bucket4j:bucket4j_jdk17-lettuce", version = "8.18.0" }
 util-micrometer = { module = "io.micrometer:micrometer-registry-prometheus", version = "1.16.3" }
@@ -57,5 +57,14 @@ util-dotenv = {module = "io.github.cdimascio:dotenv-kotlin", version = "6.4.1"}
 # Test
 spring-test = { module = "org.springframework.boot:spring-boot-starter-test" }
 test-junit = { module = "org.junit.jupiter:junit-jupiter", version = "5.11.0" }
+micrometer-registry = { module = "io.micrometer:micrometer-registry-prometheus" }
+micrometer-core = { module = "io.micrometer:micrometer-core" }
 test-mockito = { module = "org.mockito:mockito-core", version = "5.12.0" }
 test-mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version = "5.3.1" }
+
+# Test container
+spring-testcontainers = { module = "org.springframework.boot:spring-boot-testcontainers" }
+testcontainers-junit = { module = "org.testcontainers:testcontainers-junit-jupiter" }
+testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql" }
+testcontainers-minio = { module = "org.testcontainers:testcontainers-minio" }
+testcontainers-kafka = { module = "org.testcontainers:testcontainers-kafka" }
