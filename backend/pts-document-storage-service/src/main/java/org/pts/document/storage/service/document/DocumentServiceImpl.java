@@ -37,7 +37,7 @@ public class DocumentServiceImpl implements DocumentService {
     @Override
     public String getDocument(UUID docId) throws IOException, InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         DocumentEntity document = documentRepositoryService.get(docId);
-        var key = document.getKey();
+        var key = document.getObjectKey();
         var bucket = minIOProperties.getDocumentPersistenceBucket();
 
         var getObjectRequest = GetObjectRequest.builder()
@@ -54,8 +54,8 @@ public class DocumentServiceImpl implements DocumentService {
 
         var originalFileName = metadata.get("original-file-name");
         var originalContentType = metadata.get("original-content-type");
-        var encryptedDataKey = document.getEncryptedFileKey();
-        var iv = document.getIv();
+        var encryptedDataKey = document.getEncryptedDataKey();
+        var iv = document.getInitializationVector();
 
         var s3ObjectStream = storageService.getObjectStream(getObjectRequest);
 
@@ -84,8 +84,8 @@ public class DocumentServiceImpl implements DocumentService {
             throw new RuntimeException(e);
         }
 
-        document.setTempKey(tempKey);
-        document.setTempBucket(minIOProperties.getDocumentTempBucket().getBucketName());
+        document.setTransferObjectKey(tempKey);
+        document.setTransferBucket(minIOProperties.getDocumentTempBucket().getBucketName());
         documentRepositoryService.save(document);
 
         return tempKey;
@@ -95,8 +95,8 @@ public class DocumentServiceImpl implements DocumentService {
     public String upload(UUID id) throws Exception {
         var document = documentRepositoryService.get(id);
 
-        var tempKey = document.getTempKey();
-        var tempBucket = document.getTempBucket();
+        var tempKey = document.getTransferObjectKey();
+        var tempBucket = document.getTransferBucket();
 
         var getObjectRequest = GetObjectRequest.builder()
                 .bucket(tempBucket)
@@ -124,9 +124,9 @@ public class DocumentServiceImpl implements DocumentService {
         var persistenceBucket = minIOProperties.getDocumentPersistenceBucket().getBucketName();
         var persistenceKey = UUID.randomUUID() + originalFileName;
 
-        document.setKey(persistenceKey);
-        document.setEncryptedFileKey(encryptedPayload.encryptedDataKey());
-        document.setIv(encryptedPayload.iv());
+        document.setObjectKey(persistenceKey);
+        document.setEncryptedDataKey(encryptedPayload.encryptedDataKey());
+        document.setInitializationVector(encryptedPayload.iv());
         document.setStatus(DocumentStatus.UPLOADING);
 
         documentRepositoryService.save(

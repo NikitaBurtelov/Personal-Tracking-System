@@ -2,8 +2,8 @@ package org.pts.document.storage.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.pts.document.storage.model.enums.JobStatus;
-import org.pts.document.storage.model.enums.JobType;
+import org.pts.document.storage.model.enums.ProcessingStatus;
+import org.pts.document.storage.model.enums.ProcessingType;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -22,16 +22,16 @@ public class ProcessingOperation {
     private UUID id;
 
     @Enumerated(EnumType.STRING)
-    private JobType type;
+    private ProcessingType type;
 
     @Enumerated(EnumType.STRING)
-    private JobStatus status;
+    private ProcessingStatus status;
 
-    @Column(name = "total_jobs")
-    private int totalJobs;
+    @Column(name = "total_batch")
+    private int totalBatch;
 
-    @Column(name = "completed_jobs")
-    private int completedJobs;
+    @Column(name = "completed_batch")
+    private int completedBatch;
 
     @Column(name = "created_at")
     private Instant createdAt;
@@ -49,7 +49,7 @@ public class ProcessingOperation {
         }
         createdAt = Instant.now();
         updatedAt = createdAt;
-        completedJobs = 0;
-        status = JobStatus.NEW;
+        completedBatch = 0;
+        status = ProcessingStatus.NEW;
     }
 }

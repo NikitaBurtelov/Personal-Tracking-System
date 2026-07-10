@@ -5,8 +5,8 @@ import lombok.Builder;
 import java.util.UUID;
 
 @Builder
-public record JobItemExecutionResult(
-        Long itemId,
+public record TaskExecutionResult(
+        Long taskId,
         UUID documentId,
         String result,
         String message

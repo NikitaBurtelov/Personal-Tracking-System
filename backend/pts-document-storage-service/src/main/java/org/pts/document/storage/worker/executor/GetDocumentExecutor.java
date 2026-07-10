@@ -2,15 +2,15 @@ package org.pts.document.storage.worker.executor;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.pts.document.storage.model.dto.JobExecutionResult;
-import org.pts.document.storage.model.dto.JobItemExecutionResult;
-import org.pts.document.storage.model.enums.JobStatus;
-import org.pts.document.storage.model.enums.JobType;
+import org.pts.document.storage.model.dto.BatchExecutionResult;
+import org.pts.document.storage.model.dto.TaskExecutionResult;
+import org.pts.document.storage.model.enums.ProcessingStatus;
+import org.pts.document.storage.model.enums.ProcessingType;
 import org.pts.document.storage.service.document.DocumentManagerService;
+import org.pts.document.storage.service.dto.BatchContext;
 import org.pts.document.storage.service.dto.DocumentContext;
-import org.pts.document.storage.service.dto.JobContext;
-import org.pts.document.storage.service.dto.JobItemContext;
-import org.pts.document.storage.service.outbox.JobManagerService;
+import org.pts.document.storage.service.dto.TaskContext;
+import org.pts.document.storage.service.processing.ProcessingOperationManager;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -23,28 +23,28 @@ import java.util.stream.Collectors;
 @Slf4j
 public class GetDocumentExecutor {
     private final DocumentManagerService documentManagerService;
-    private final JobManagerService jobManagerService;
+    private final ProcessingOperationManager processingOperationManager;
 
-    public List<JobExecutionResult> execute() {
-        var jobs = jobManagerService.takeForProcessing(
-                JobType.GET,
-                JobStatus.NEW,
+    public List<BatchExecutionResult> execute() {
+        var batches = processingOperationManager.takeForProcessing(
+                ProcessingType.GET,
+                ProcessingStatus.NEW,
                 10
         );
 
-        if (jobs == null || jobs.isEmpty()) {
+        if (batches == null || batches.isEmpty()) {
             return Collections.emptyList();
         }
 
         try {
-            return jobs.entrySet()
+            return batches.entrySet()
                     .stream()
                     .map(entry -> {
-                        var items = entry.getValue();
+                        var tasks = entry.getValue();
 
                         var documents = documentManagerService.fetchDocumentsAsync(
-                                        items.stream()
-                                                .map(JobItemContext::documentId)
+                                        tasks.stream()
+                                                .map(TaskContext::documentId)
                                                 .toList()
                                 ).stream()
                                 .collect(Collectors.toMap(
@@ -52,15 +52,15 @@ public class GetDocumentExecutor {
                                         Function.identity()
                                 ));
 
-                        return JobExecutionResult.builder()
-                                .eventId(entry.getKey().eventId())
-                                .jobId(entry.getKey().jobId())
-                                .items(items.stream()
+                        return BatchExecutionResult.builder()
+                                .operationId(entry.getKey().operationId())
+                                .batchId(entry.getKey().batchId())
+                                .taskExecutionResults(tasks.stream()
                                         .map(item -> {
                                             var document = documents.get(item.documentId());
 
-                                            return JobItemExecutionResult.builder()
-                                                    .itemId(item.itemId())
+                                            return TaskExecutionResult.builder()
+                                                    .taskId(item.taskId())
                                                     .documentId(document.documentId())
                                                     .result(document.result())
                                                     .message(document.message())
@@ -71,21 +71,21 @@ public class GetDocumentExecutor {
                     })
                     .toList();
         } catch (Exception e) {
-            var jobsIds = jobs.keySet()
+            var batchIds = batches.keySet()
                     .stream()
-                    .map(JobContext::jobId)
+                    .map(BatchContext::batchId)
                     .toList();
-            var itemsIds = jobs.values()
+            var taskIds = batches.values()
                     .stream()
                     .flatMap(List::stream)
-                    .map(JobItemContext::itemId)
+                    .map(TaskContext::taskId)
                     .toList();
 
-            log.error("Failed to upload documents for tasks: {} ", jobsIds, e);
+            log.error("Failed to upload documents for tasks: {} ", batchIds, e);
 
             markFailed(
-                    jobsIds,
-                    itemsIds
+                    batchIds,
+                    taskIds
             );
 
             return Collections.emptyList();
@@ -93,14 +93,18 @@ public class GetDocumentExecutor {
     }
 
 
-    private void markFailed(List<Long> jobIds, List<Long> itemIds) {
-        jobManagerService.updateJobAndItemStatus(jobIds, itemIds, JobStatus.FAILED);
+    private void markFailed(List<Long> batchIds, List<Long> taskIds) {
+        processingOperationManager.updateBatchAndTaskStatus(
+                batchIds,
+                taskIds,
+                ProcessingStatus.FAILED
+        );
     }
-//        jobs.forEach((job, items) -> {
+//        jobs.forEach((job, taskExecutionResults) -> {
 //            try {
-//                var docs = items.stream().map(OutboxJobItemEntity::getDocumentId).toList();
+//                var docs = taskExecutionResults.stream().map(OutboxJobItemEntity::getDocumentId).toList();
 //
-//                var itemsDocsMap = items.stream()
+//                var itemsDocsMap = taskExecutionResults.stream()
 //                        .collect(
 //                                Collectors.toMap(
 //                                        OutboxJobItemEntity::getDocumentId,
@@ -112,14 +116,14 @@ public class GetDocumentExecutor {
 //                jobsData.add(
 //                        JobResult.builder()
 //                                .job(job)
-//                                .items(items)
+//                                .taskExecutionResults(taskExecutionResults)
 //                                .results(results)
 //                                .build());
 //
 //                identifyAndUpdateStatus(job, itemsDocsMap, results);
 //
 //            } catch (Exception e) {
-//                markFailed(job, items);
+//                markFailed(job, taskExecutionResults);
 //            }
 //        });
 

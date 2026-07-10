@@ -2,26 +2,26 @@ package org.pts.document.storage.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.pts.document.storage.model.enums.JobStatus;
+import org.pts.document.storage.model.enums.ProcessingStatus;
 
 import java.util.UUID;
 
 @Entity
-@Table(name = "outbox_item", schema = "document_storage_schema")
+@Table(name = "processing_task", schema = "document_storage_schema")
 @Getter
 @Setter
 @Builder(builderMethodName = "builder")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-public class OutboxJobItemEntity {
+public class ProcessingTaskEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(name = "job_id")
-    private Long jobId;
+    @Column(name = "batch_id")
+    private Long batchId;
     @Column(name = "document_id")
     private UUID documentId;
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private JobStatus status;
+    private ProcessingStatus status;
 }

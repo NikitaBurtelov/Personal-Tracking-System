@@ -19,13 +19,13 @@ public class EventManagerServiceImpl implements EventManagerService {
     @Transactional
     @Override
     public List<OutboxEventEntity> getUnpublishedEvents(int limit) {
-        return outboxEventRepository.findUnpublishedBatch(limit);
+        return outboxEventRepository.findUnpublishedEvent(limit);
     }
 
     @Transactional
     @Override
     public List<OutboxEventEntity> getUnpublishedEvents(List<UUID> eventIds) {
-        return outboxEventRepository.findUnpublishedBatch(eventIds);
+        return outboxEventRepository.findUnpublishedEvent(eventIds);
     }
 
     @Transactional

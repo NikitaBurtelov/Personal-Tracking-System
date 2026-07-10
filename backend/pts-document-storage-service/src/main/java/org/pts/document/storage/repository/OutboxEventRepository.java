@@ -23,7 +23,7 @@ public interface OutboxEventRepository extends JpaRepository<OutboxEventEntity, 
                     """,
             nativeQuery = true
     )
-    List<OutboxEventEntity> findUnpublishedBatch(
+    List<OutboxEventEntity> findUnpublishedEvent(
             @Param("limit") int limit
     );
 
@@ -36,7 +36,7 @@ public interface OutboxEventRepository extends JpaRepository<OutboxEventEntity, 
                     """,
             nativeQuery = true
     )
-    List<OutboxEventEntity> findUnpublishedBatch(
+    List<OutboxEventEntity> findUnpublishedEvent(
             @Param("ids") List<UUID> ids
     );
 }

@@ -2,7 +2,7 @@ package org.pts.document.storage.service.security;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.pts.document.storage.model.dto.EncryptedPayload;
+import org.pts.document.storage.model.dto.DocumentEncryptedPayload;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 
@@ -41,7 +41,7 @@ public class SecurityDocumentServiceImpl implements SecurityDocumentService {
     }
 
     @Override
-    public Pair<CipherInputStream, EncryptedPayload> encryptByStream(
+    public Pair<CipherInputStream, DocumentEncryptedPayload> encryptByStream(
             InputStream objectStream
     ) throws Exception {
         var keyGenerator = KeyGenerator.getInstance("AES");
@@ -65,7 +65,7 @@ public class SecurityDocumentServiceImpl implements SecurityDocumentService {
 
         return Pair.of(
                 cipherStream,
-                EncryptedPayload.builder()
+                DocumentEncryptedPayload.builder()
                         .encryptedDataKey(encryptDataKey)
                         .iv(iv)
                         .build()

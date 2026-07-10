@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.pts.document.storage.config.minio.MinIOProperties;
 import org.pts.document.storage.messaging.dto.DocumentDataPayload;
 import org.pts.document.storage.messaging.dto.KafkaEvent;
-import org.pts.document.storage.service.document.DocumentJobManager;
+import org.pts.document.storage.service.document.DocumentOperationManager;
 import org.pts.document.storage.service.outbox.EventManagerService;
 import org.springframework.stereotype.Component;
 
@@ -20,7 +20,7 @@ public class DocumentMessageBuilderExecutor {
     private final MinIOProperties minIOProperties;
 
     private final EventManagerService eventManagerService;
-    private final DocumentJobManager documentJobManager;
+    private final DocumentOperationManager documentOperationManager;
 
     public List<KafkaEvent<DocumentDataPayload>> buildUploadMessage(List<UUID> eventIds) {
         var events = eventManagerService.getUnpublishedEvents(eventIds);
@@ -31,7 +31,7 @@ public class DocumentMessageBuilderExecutor {
 
         return events.stream()
                 .map(event -> {
-                    var documents = documentJobManager.getDocumentsByOperationId(event.getOperationId());
+                    var documents = documentOperationManager.getDocumentsByOperationId(event.getOperationId());
                     var bucket = minIOProperties.getDocumentPersistenceBucket().getBucketName();
                     return KafkaEvent.of(
                             "DOCUMENT_UPLOAD_COMPLETED",
@@ -43,7 +43,7 @@ public class DocumentMessageBuilderExecutor {
                                             documents.stream()
                                                     .map(doc ->
                                                             DocumentDataPayload.DocumentData.builder()
-                                                                    .s3Key(doc.getKey())
+                                                                    .s3Key(doc.getObjectKey())
                                                                     .id(doc.getId())
                                                                     .build()
                                                     )
@@ -63,7 +63,7 @@ public class DocumentMessageBuilderExecutor {
 
         return events.stream()
                 .map(event -> {
-                    var documents = documentJobManager.getDocumentsByOperationId(event.getOperationId());
+                    var documents = documentOperationManager.getDocumentsByOperationId(event.getOperationId());
                     var bucket = minIOProperties.getDocumentTempBucket().getBucketName();
                     return KafkaEvent.of(
                             "DOCUMENT_SENDED_COMPLETED",
@@ -75,7 +75,7 @@ public class DocumentMessageBuilderExecutor {
                                             documents.stream()
                                                     .map(doc ->
                                                             DocumentDataPayload.DocumentData.builder()
-                                                                    .s3Key(doc.getTempKey())
+                                                                    .s3Key(doc.getTransferObjectKey())
                                                                     .id(doc.getId())
                                                                     .build()
                                                     )

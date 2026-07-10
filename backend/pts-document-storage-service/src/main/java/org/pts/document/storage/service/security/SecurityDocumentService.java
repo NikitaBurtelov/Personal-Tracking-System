@@ -1,6 +1,6 @@
 package org.pts.document.storage.service.security;
 
-import org.pts.document.storage.model.dto.EncryptedPayload;
+import org.pts.document.storage.model.dto.DocumentEncryptedPayload;
 import org.springframework.data.util.Pair;
 
 import javax.crypto.BadPaddingException;
@@ -19,7 +19,7 @@ public interface SecurityDocumentService {
             byte[] iv
     ) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException;
 
-    Pair<CipherInputStream, EncryptedPayload> encryptByStream(
+    Pair<CipherInputStream, DocumentEncryptedPayload> encryptByStream(
             InputStream objectStream
     ) throws Exception;
 }

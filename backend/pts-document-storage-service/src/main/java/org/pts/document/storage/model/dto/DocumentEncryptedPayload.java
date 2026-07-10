@@ -3,7 +3,7 @@ package org.pts.document.storage.model.dto;
 import lombok.Builder;
 
 @Builder
-public record EncryptedPayload(
+public record DocumentEncryptedPayload(
         byte[] encryptedDataKey,
         byte[] iv
 ) {

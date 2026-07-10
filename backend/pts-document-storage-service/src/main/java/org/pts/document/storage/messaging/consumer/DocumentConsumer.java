@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.pts.document.storage.messaging.command.DeleteDocumentCommand;
 import org.pts.document.storage.messaging.command.UploadDocumentCommand;
 import org.pts.document.storage.messaging.dto.GetDocumentSourceRequest;
-import org.pts.document.storage.service.outbox.JobManagerService;
+import org.pts.document.storage.service.processing.ProcessingOperationManager;
 import org.springframework.kafka.annotation.KafkaHandler;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -23,7 +23,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 @Slf4j
 public class DocumentConsumer {
-    private final JobManagerService jobManagerService;
+    private final ProcessingOperationManager processingOperationManager;
 
     @Timed(
             value = "messaging.document.upload-command",
@@ -39,7 +39,7 @@ public class DocumentConsumer {
     ) throws IOException {
         try {
             log.info("A request to upload files has been received. workId:{}", message.workId());
-            jobManagerService.createUploadDocumentJob(message);
+            processingOperationManager.createUploadDocumentTask(message);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -49,7 +49,7 @@ public class DocumentConsumer {
     public void getDocumentSource(GetDocumentSourceRequest message) {
         try {
             log.info("Request to view files received. workId:{}", message.workId());
-            jobManagerService.createGetDocumentJob(message);
+            processingOperationManager.createGetDocumentTask(message);
 
         } catch (Exception e) {
             throw new RuntimeException(e);

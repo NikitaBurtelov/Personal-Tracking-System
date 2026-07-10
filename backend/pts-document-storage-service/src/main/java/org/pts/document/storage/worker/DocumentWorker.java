@@ -3,9 +3,7 @@ package org.pts.document.storage.worker;
 import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.pts.document.storage.model.dto.JobExecutionResult;
-import org.pts.document.storage.service.document.DocumentManagerService;
-import org.pts.document.storage.service.outbox.JobManagerService;
+import org.pts.document.storage.model.dto.BatchExecutionResult;
 import org.pts.document.storage.worker.executor.*;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -18,9 +16,6 @@ import java.util.concurrent.Semaphore;
 @Slf4j
 @RequiredArgsConstructor
 public class DocumentWorker {
-    private final DocumentManagerService documentManagerService;
-    private final JobManagerService jobManagerService;
-
     private final ThreadPoolTaskExecutor threadPoolUploadDocumentProcessExecutor;
     private final ThreadPoolTaskExecutor threadPoolGetDocumentProcessExecutor;
     private final Executor virtualThreadPoolTaskProcessExecutor; // virtual thread
@@ -29,7 +24,7 @@ public class DocumentWorker {
     private final PublishingEventExecutor publishingEventExecutor;
     private final UploadDocumentExecutor uploadDocumentExecutor;
     private final GetDocumentExecutor getDocumentExecutor;
-    private final UpdateJobStatusExecutor updateJobStatusExecutor;
+    private final UpdateTaskStatusExecutor updateTaskStatusExecutor;
     private final UpdateProcessingOperationStatusExecutor updateProcessingOperationStatusExecutor;
 
     private final Semaphore publicationEventProcessSemaphore;
@@ -62,9 +57,9 @@ public class DocumentWorker {
                 }
 
                 // Stage 2: update statuses based on upload results
-                updateJobStatusExecutor.execute(uploadResult);
+                updateTaskStatusExecutor.execute(uploadResult);
                 // Stage 3: build message
-                var eventIds = uploadResult.stream().map(JobExecutionResult::eventId).toList();
+                var eventIds = uploadResult.stream().map(BatchExecutionResult::operationId).toList();
 
                 var message = documentMessageBuilderExecutor.buildUploadMessage(eventIds);
                 if (message == null || message.isEmpty()) {
@@ -105,9 +100,9 @@ public class DocumentWorker {
                     return;
                 }
 
-                updateJobStatusExecutor.execute(getDocumentResult);
+                updateTaskStatusExecutor.execute(getDocumentResult);
 
-                var eventIds = getDocumentResult.stream().map(JobExecutionResult::eventId).toList();
+                var eventIds = getDocumentResult.stream().map(BatchExecutionResult::operationId).toList();
 
                 var message = documentMessageBuilderExecutor.buildGetMessage(eventIds);
 

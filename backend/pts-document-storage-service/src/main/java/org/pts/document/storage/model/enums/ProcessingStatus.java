@@ -2,12 +2,8 @@ package org.pts.document.storage.model.enums;
 
 import lombok.Getter;
 
-/**
- * Status enum for outbox job and item lifecycle.
- * Jobs/Items transition through states: NEW -> PROCESSING -> DONE
- */
 @Getter
-public enum JobStatus {
+public enum ProcessingStatus {
     NEW("NEW"),
     PROCESSING("PROCESSING"),
     DONE("DONE"),
@@ -15,7 +11,7 @@ public enum JobStatus {
 
     private final String status;
 
-    JobStatus(String status) {
+    ProcessingStatus(String status) {
         this.status = status;
     }
 }
