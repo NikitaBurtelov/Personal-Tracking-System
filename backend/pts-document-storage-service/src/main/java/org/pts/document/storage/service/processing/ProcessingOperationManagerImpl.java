@@ -20,10 +20,8 @@ import org.pts.document.storage.service.dto.TaskContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -272,7 +270,9 @@ public class ProcessingOperationManagerImpl implements ProcessingOperationManage
                             Map.Entry::getValue,
                             Collectors.mapping(Map.Entry::getKey, Collectors.toList())
                     ));
+
             log.debug("Updating job statuses: {}", batchesGrouped);
+
             batchesGrouped.forEach((status, ids) -> {
                 if (ids != null && !ids.isEmpty()) {
                     batchRepository.updateStatus(ids, status);
@@ -291,7 +291,9 @@ public class ProcessingOperationManagerImpl implements ProcessingOperationManage
                     taskRepository.updateStatus(ids, status);
                 }
             });
+
             log.debug("Updated item statuses: {}", tasksGrouped);
+
             var doneBatchIds = batchStatusMap.entrySet().stream()
                     .filter(e -> e.getValue() == ProcessingStatus.DONE)
                     .map(Map.Entry::getKey)
@@ -300,14 +302,14 @@ public class ProcessingOperationManagerImpl implements ProcessingOperationManage
             if (!doneBatchIds.isEmpty()) {
                 var doneBatches = batchRepository.findAllById(doneBatchIds);
                 doneBatches.forEach(batch ->
-                        processingOperationService.onBatchCompleted(batch.getOperationId())
+                        processingOperationService
+                                .onBatchCompleted(batch.getOperationId())
                 );
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
-
 
     private <T> List<List<T>> chunk(List<T> list, int size) {
         List<List<T>> result = new ArrayList<>();

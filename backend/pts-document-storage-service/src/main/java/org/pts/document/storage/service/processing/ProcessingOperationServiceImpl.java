@@ -7,8 +7,10 @@ import org.pts.document.storage.model.enums.ProcessingStatus;
 import org.pts.document.storage.repository.OutboxEventRepository;
 import org.pts.document.storage.repository.ProcessingOperationRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -18,19 +20,24 @@ public class ProcessingOperationServiceImpl implements ProcessingOperationServic
     private final ProcessingOperationRepository processingOperationRepository;
     private final OutboxEventRepository outboxEventRepository;
 
-    @Transactional
+    @Transactional(propagation = Propagation.MANDATORY)
     @Override
-    public void onBatchCompleted(UUID operationId) {
+    public Optional<UUID> onBatchCompleted(UUID operationId) {
         String status = processingOperationRepository.completeBatch(operationId);
 
         if (status.equals(ProcessingStatus.DONE.getStatus())) {
             log.debug("Job completed successfully, operationId: {}", operationId);
-            outboxEventRepository.save(
-                    OutboxEventEntity.builder()
-                            .operationId(operationId)
-                            .published(false)
-                            .build()
-            );
+
+            var event = OutboxEventEntity.builder()
+                    .operationId(operationId)
+                    .published(false)
+                    .build();
+
+            outboxEventRepository.save(event);
+
+            return Optional.of(event.getId());
         }
+
+        else return Optional.empty();
     }
 }

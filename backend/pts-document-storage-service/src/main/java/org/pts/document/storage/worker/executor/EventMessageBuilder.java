@@ -16,7 +16,7 @@ import java.util.UUID;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class DocumentMessageBuilderExecutor {
+public class EventMessageBuilder {
     private final MinIOProperties minIOProperties;
 
     private final EventManagerService eventManagerService;

@@ -7,9 +7,7 @@ import org.pts.document.storage.model.enums.ProcessingStatus;
 import org.pts.document.storage.service.processing.ProcessingOperationManager;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Component

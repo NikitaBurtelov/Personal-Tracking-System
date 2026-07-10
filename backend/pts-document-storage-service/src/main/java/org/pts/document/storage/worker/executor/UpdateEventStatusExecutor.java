@@ -11,7 +11,7 @@ import java.util.UUID;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class UpdateProcessingOperationStatusExecutor {
+public class UpdateEventStatusExecutor {
     private final EventManagerService eventManagerService;
 
     public void execute(List<UUID> eventIds) {

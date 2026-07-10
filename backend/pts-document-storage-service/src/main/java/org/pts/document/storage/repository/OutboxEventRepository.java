@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -39,4 +40,11 @@ public interface OutboxEventRepository extends JpaRepository<OutboxEventEntity, 
     List<OutboxEventEntity> findUnpublishedEvent(
             @Param("ids") List<UUID> ids
     );
+
+    @Query("""
+            select e.id
+            from OutboxEventEntity e
+            where e.operationId in :operationIds
+            """)
+    List<UUID> findEventIdsByOperationIdIn(Collection<UUID> operationIds);
 }

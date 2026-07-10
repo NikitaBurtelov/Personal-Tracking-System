@@ -20,12 +20,14 @@ public class DocumentWorker {
     private final ThreadPoolTaskExecutor threadPoolGetDocumentProcessExecutor;
     private final Executor virtualThreadPoolTaskProcessExecutor; // virtual thread
 
-    private final DocumentMessageBuilderExecutor documentMessageBuilderExecutor;
+    private final EventMessageBuilder eventMessageBuilder;
+    private final OperationEventsFinder  operationEventsFinder;
+
     private final PublishingEventExecutor publishingEventExecutor;
     private final UploadDocumentExecutor uploadDocumentExecutor;
     private final GetDocumentExecutor getDocumentExecutor;
     private final UpdateTaskStatusExecutor updateTaskStatusExecutor;
-    private final UpdateProcessingOperationStatusExecutor updateProcessingOperationStatusExecutor;
+    private final UpdateEventStatusExecutor updateEventStatusExecutor;
 
     private final Semaphore publicationEventProcessSemaphore;
     private final Semaphore uploadDocumentProcessSemaphore;
@@ -52,23 +54,30 @@ public class DocumentWorker {
                 // Stage 1: upload documents
                 var uploadResult = uploadDocumentExecutor.execute();
 
-                if (uploadResult == null || uploadResult.isEmpty()) {
+                if (uploadResult.isEmpty()) {
                     return;
                 }
 
                 // Stage 2: update statuses based on upload results
                 updateTaskStatusExecutor.execute(uploadResult);
-                // Stage 3: build message
-                var eventIds = uploadResult.stream().map(BatchExecutionResult::operationId).toList();
 
-                var message = documentMessageBuilderExecutor.buildUploadMessage(eventIds);
+                var operationsIds = uploadResult.stream().map(BatchExecutionResult::operationId).toList();
+
+                var eventsIds = operationEventsFinder.findEventByCompletedOperation(operationsIds);
+
+                if (eventsIds.isEmpty()) {
+                    return;
+                }
+
+                // Stage 3: build message
+                var message = eventMessageBuilder.buildUploadMessage(eventsIds);
                 if (message == null || message.isEmpty()) {
                     return;
                 }
                 // Stage 4: send message
                 publishingEventExecutor.execute(message);
                 // Stage 5: update event status
-                updateProcessingOperationStatusExecutor.execute(eventIds);
+                updateEventStatusExecutor.execute(eventsIds);
             } catch (Exception e) {
                 log.error("Error in uploadDocumentProcess: ", e);
             } finally {
@@ -100,17 +109,17 @@ public class DocumentWorker {
                     return;
                 }
 
-                updateTaskStatusExecutor.execute(getDocumentResult);
+                var qq = updateTaskStatusExecutor.execute(getDocumentResult);
 
                 var eventIds = getDocumentResult.stream().map(BatchExecutionResult::operationId).toList();
 
-                var message = documentMessageBuilderExecutor.buildGetMessage(eventIds);
+                var message = eventMessageBuilder.buildGetMessage(eventIds);
 
                 // Stage 4: send message
                 publishingEventExecutor.execute(message);
 
                 // Stage 5: update event status
-                updateProcessingOperationStatusExecutor.execute(eventIds);
+                updateEventStatusExecutor.execute(eventIds);
             } catch (Exception e) {
                 log.error("Error in getDocumentProcess: ", e);
             } finally {
