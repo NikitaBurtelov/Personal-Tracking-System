@@ -2,12 +2,12 @@ package org.pts.document.storage.worker.executor;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.pts.document.storage.model.enums.ProcessingStatus;
-import org.pts.document.storage.service.document.DocumentManagerService;
-import org.pts.document.storage.service.dto.BatchContext;
-import org.pts.document.storage.service.dto.DocumentContext;
-import org.pts.document.storage.service.dto.TaskContext;
-import org.pts.document.storage.service.processing.ProcessingOperationManager;
+import org.pts.document.storage.domain.enums.ProcessingStatus;
+import org.pts.document.storage.domain.document.DocumentManager;
+import org.pts.document.storage.domain.context.BatchContext;
+import org.pts.document.storage.domain.context.DocumentContext;
+import org.pts.document.storage.domain.context.TaskContext;
+import org.pts.document.storage.domain.processing.ProcessingOperationManager;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -21,14 +21,14 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class UploadDocumentExecutor {
-    private final DocumentManagerService documentManagerService;
+    private final DocumentManager documentManager;
     private final ProcessingOperationManager processingOperationManager;
 
     public Map<UUID, DocumentContext> execute(List<BatchContext> batchContexts) {
         try {
             return batchContexts.stream()
                     .flatMap(entry ->
-                            documentManagerService.uploadDocumentsAsync(
+                            documentManager.uploadDocumentsAsync(
                                             entry.getTaskContexts().stream()
                                                     .map(TaskContext::getDocumentId)
                                                     .toList()

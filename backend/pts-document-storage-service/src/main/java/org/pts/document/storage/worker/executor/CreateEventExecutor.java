@@ -2,10 +2,10 @@ package org.pts.document.storage.worker.executor;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.pts.document.storage.model.enums.ProcessingStatus;
-import org.pts.document.storage.service.dto.BatchContext;
-import org.pts.document.storage.service.outbox.EventManager;
-import org.pts.document.storage.service.processing.ProcessingOperationManager;
+import org.pts.document.storage.domain.enums.ProcessingStatus;
+import org.pts.document.storage.domain.context.BatchContext;
+import org.pts.document.storage.domain.outbox.EventManager;
+import org.pts.document.storage.domain.processing.ProcessingOperationManager;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 

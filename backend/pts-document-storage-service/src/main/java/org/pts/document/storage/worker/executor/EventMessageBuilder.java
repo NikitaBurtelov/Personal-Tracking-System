@@ -5,8 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.pts.document.storage.config.minio.MinIOProperties;
 import org.pts.document.storage.messaging.dto.DocumentDataPayload;
 import org.pts.document.storage.messaging.dto.KafkaEvent;
-import org.pts.document.storage.service.document.DocumentOperationReader;
-import org.pts.document.storage.service.outbox.EventManager;
+import org.pts.document.storage.domain.document.service.DocumentOperationReader;
+import org.pts.document.storage.domain.outbox.EventManager;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;

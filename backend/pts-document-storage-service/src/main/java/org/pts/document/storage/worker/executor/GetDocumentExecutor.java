@@ -2,9 +2,9 @@ package org.pts.document.storage.worker.executor;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.pts.document.storage.model.enums.ProcessingStatus;
-import org.pts.document.storage.service.document.DocumentManagerService;
-import org.pts.document.storage.service.processing.ProcessingOperationManager;
+import org.pts.document.storage.domain.enums.ProcessingStatus;
+import org.pts.document.storage.domain.document.DocumentManager;
+import org.pts.document.storage.domain.processing.ProcessingOperationManager;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -13,7 +13,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class GetDocumentExecutor {
-    private final DocumentManagerService documentManagerService;
+    private final DocumentManager documentManager;
     private final ProcessingOperationManager processingOperationManager;
 
 //    public List<BatchExecutionResult> execute() {

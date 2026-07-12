@@ -2,10 +2,9 @@ package org.pts.document.storage.worker;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.pts.document.storage.model.enums.ProcessingStatus;
-import org.pts.document.storage.model.enums.ProcessingType;
-import org.pts.document.storage.service.dto.BatchContext;
-import org.pts.document.storage.service.processing.ProcessingOperationManager;
+import org.pts.document.storage.domain.enums.ProcessingStatus;
+import org.pts.document.storage.domain.enums.ProcessingType;
+import org.pts.document.storage.domain.context.BatchContext;
 import org.pts.document.storage.worker.executor.*;
 import org.pts.document.storage.worker.support.ProcessingActions;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -97,7 +96,7 @@ public class DocumentWorker {
                 );
 
                 //Stage 4.1: find event
-                var eventsIds =  operationEventsFinder.findEventByCompletedOperation(
+                var eventsIds = operationEventsFinder.findEventByCompletedOperation(
                         batchesGroupedByStatus.get(ProcessingStatus.CREATED_EVENT)
                 );
 

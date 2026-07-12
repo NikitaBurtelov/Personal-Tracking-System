@@ -1,8 +1,8 @@
 package org.pts.document.storage.worker.executor;
 
 import lombok.RequiredArgsConstructor;
-import org.pts.document.storage.repository.OutboxEventRepository;
-import org.pts.document.storage.service.dto.BatchContext;
+import org.pts.document.storage.domain.outbox.repository.OutboxEventRepository;
+import org.pts.document.storage.domain.context.BatchContext;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;

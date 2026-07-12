@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.pts.document.storage.messaging.command.DeleteDocumentCommand;
 import org.pts.document.storage.messaging.command.UploadDocumentCommand;
 import org.pts.document.storage.messaging.dto.GetDocumentSourceRequest;
-import org.pts.document.storage.service.processing.ProcessingOperationManager;
+import org.pts.document.storage.domain.processing.ProcessingOperationManager;
 import org.springframework.kafka.annotation.KafkaHandler;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.handler.annotation.Payload;
