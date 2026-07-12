@@ -26,6 +26,29 @@ public interface ProcessingBatchRepository extends JpaRepository<ProcessingBatch
             @Param("limit") int limit
     );
 
+    @Query(value = """
+            UPDATE document_storage_schema.processing_batch
+                        SET locked_until = NOW() + INTERVAL '5 minutes'
+                        WHERE id IN (
+                            SELECT id
+                            FROM document_storage_schema.processing_batch
+                            WHERE type = :type
+                              AND status != 'DONE'
+                              AND (
+                                  locked_until IS NULL
+                                  OR locked_until < NOW()
+                              )
+                            ORDER BY id
+                            FOR UPDATE SKIP LOCKED
+                            LIMIT :limit
+                        )
+                        RETURNING *;
+            """, nativeQuery = true)
+    List<ProcessingBatchEntity> findProcessingBatchByType(
+            @Param("type") String type,
+            @Param("limit") int limit
+    );
+
     @Modifying
     @Query("""
                 UPDATE ProcessingBatchEntity b

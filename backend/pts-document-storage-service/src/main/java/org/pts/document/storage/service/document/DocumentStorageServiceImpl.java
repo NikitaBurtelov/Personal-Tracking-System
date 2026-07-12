@@ -28,15 +28,16 @@ import java.util.UUID;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class DocumentServiceImpl implements DocumentService {
+public class DocumentStorageServiceImpl implements DocumentStorageService {
+    private final MinIOProperties minIOProperties;
+
     private final StorageService storageService;
     private final SecurityDocumentService securityDocumentService;
-    private final DocumentRepositoryService documentRepositoryService;
-    private final MinIOProperties minIOProperties;
+    private final DocumentPersistenceService documentPersistenceService;
 
     @Override
     public String getDocument(UUID docId) throws IOException, InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
-        DocumentEntity document = documentRepositoryService.get(docId);
+        DocumentEntity document = documentPersistenceService.get(docId);
         var key = document.getObjectKey();
         var bucket = minIOProperties.getDocumentPersistenceBucket();
 
@@ -86,14 +87,14 @@ public class DocumentServiceImpl implements DocumentService {
 
         document.setTransferObjectKey(tempKey);
         document.setTransferBucket(minIOProperties.getDocumentTempBucket().getBucketName());
-        documentRepositoryService.save(document);
+        documentPersistenceService.save(document);
 
         return tempKey;
     }
 
     @Override
     public String upload(UUID id) throws Exception {
-        var document = documentRepositoryService.get(id);
+        var document = documentPersistenceService.get(id);
 
         var tempKey = document.getTransferObjectKey();
         var tempBucket = document.getTransferBucket();
@@ -129,7 +130,7 @@ public class DocumentServiceImpl implements DocumentService {
         document.setInitializationVector(encryptedPayload.iv());
         document.setStatus(DocumentStatus.UPLOADING);
 
-        documentRepositoryService.save(
+        documentPersistenceService.save(
                 document
         );
 
@@ -153,11 +154,11 @@ public class DocumentServiceImpl implements DocumentService {
                     )
             );
 
-            documentRepositoryService.updateStatus(id, DocumentStatus.UPLOADED);
+            documentPersistenceService.updateStatus(id, DocumentStatus.UPLOADED);
 
             return persistenceKey;
         } catch (Exception e) {
-            documentRepositoryService.updateStatus(id, DocumentStatus.FAILED);
+            documentPersistenceService.updateStatus(id, DocumentStatus.FAILED);
             throw new RuntimeException(e);
         }
     }

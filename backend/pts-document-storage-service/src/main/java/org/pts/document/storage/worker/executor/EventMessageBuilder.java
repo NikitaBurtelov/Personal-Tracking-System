@@ -5,8 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.pts.document.storage.config.minio.MinIOProperties;
 import org.pts.document.storage.messaging.dto.DocumentDataPayload;
 import org.pts.document.storage.messaging.dto.KafkaEvent;
-import org.pts.document.storage.service.document.DocumentOperationManager;
-import org.pts.document.storage.service.outbox.EventManagerService;
+import org.pts.document.storage.service.document.DocumentOperationReader;
+import org.pts.document.storage.service.outbox.EventManager;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -19,11 +19,11 @@ import java.util.UUID;
 public class EventMessageBuilder {
     private final MinIOProperties minIOProperties;
 
-    private final EventManagerService eventManagerService;
-    private final DocumentOperationManager documentOperationManager;
+    private final EventManager eventManager;
+    private final DocumentOperationReader documentOperationReader;
 
     public List<KafkaEvent<DocumentDataPayload>> buildUploadMessage(List<UUID> eventIds) {
-        var events = eventManagerService.getUnpublishedEvents(eventIds);
+        var events = eventManager.getUnpublishedEvents(eventIds);
 
         if (events == null || events.isEmpty()) {
             return Collections.emptyList();
@@ -31,7 +31,7 @@ public class EventMessageBuilder {
 
         return events.stream()
                 .map(event -> {
-                    var documents = documentOperationManager.getDocumentsByOperationId(event.getOperationId());
+                    var documents = documentOperationReader.getDocumentsByOperationId(event.getOperationId());
                     var bucket = minIOProperties.getDocumentPersistenceBucket().getBucketName();
                     return KafkaEvent.of(
                             "DOCUMENT_UPLOAD_COMPLETED",
@@ -55,7 +55,7 @@ public class EventMessageBuilder {
     }
 
     public List<KafkaEvent<DocumentDataPayload>> buildGetMessage(List<UUID> eventIds) {
-        var events = eventManagerService.getUnpublishedEvents(eventIds);
+        var events = eventManager.getUnpublishedEvents(eventIds);
 
         if (events == null || events.isEmpty()) {
             return Collections.emptyList();
@@ -63,7 +63,7 @@ public class EventMessageBuilder {
 
         return events.stream()
                 .map(event -> {
-                    var documents = documentOperationManager.getDocumentsByOperationId(event.getOperationId());
+                    var documents = documentOperationReader.getDocumentsByOperationId(event.getOperationId());
                     var bucket = minIOProperties.getDocumentTempBucket().getBucketName();
                     return KafkaEvent.of(
                             "DOCUMENT_SENDED_COMPLETED",

@@ -27,6 +27,8 @@ public class ProcessingBatchEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", unique = false, nullable = false)
     private ProcessingStatus status;
+    @Column(name = "locked_until", unique = false, nullable = true)
+    private Instant lockedUntil;
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
     @Column(name = "updated_at", nullable = false)

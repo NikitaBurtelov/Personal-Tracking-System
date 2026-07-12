@@ -6,7 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
-public interface DocumentRepositoryService {
+public interface DocumentPersistenceService {
     @Transactional
     void save(DocumentEntity documentEntity);
 

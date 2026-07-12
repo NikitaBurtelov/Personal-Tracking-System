@@ -27,7 +27,7 @@ public class SchedulerConfig {
 
     @Bean
     public Semaphore uploadDocumentProcessSemaphore() {
-        return new Semaphore(properties.getUploadDocumentProcessSemaphoreSettings().getPermits());
+        return new Semaphore(1);
     }
 
     @Bean

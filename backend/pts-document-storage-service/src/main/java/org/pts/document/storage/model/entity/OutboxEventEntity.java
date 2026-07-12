@@ -23,6 +23,7 @@ public class OutboxEventEntity {
     @Column(name = "operation_id", nullable = false, updatable = false)
     private UUID operationId;
 
+    @Enumerated(EnumType.STRING)
     private EventStatus status;
 
     private boolean published;

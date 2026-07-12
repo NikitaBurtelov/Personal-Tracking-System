@@ -1,16 +1,22 @@
 package org.pts.document.storage.worker;
 
-import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.pts.document.storage.model.dto.BatchExecutionResult;
+import org.pts.document.storage.model.enums.ProcessingStatus;
+import org.pts.document.storage.model.enums.ProcessingType;
+import org.pts.document.storage.service.dto.BatchContext;
+import org.pts.document.storage.service.processing.ProcessingOperationManager;
 import org.pts.document.storage.worker.executor.*;
+import org.pts.document.storage.worker.support.ProcessingActions;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
+import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 @Slf4j
@@ -20,9 +26,12 @@ public class DocumentWorker {
     private final ThreadPoolTaskExecutor threadPoolGetDocumentProcessExecutor;
     private final Executor virtualThreadPoolTaskProcessExecutor; // virtual thread
 
+    private final ProcessingBatchProvider processingBatchProvider;
     private final EventMessageBuilder eventMessageBuilder;
-    private final OperationEventsFinder  operationEventsFinder;
+    private final OperationEventsFinder operationEventsFinder;
 
+    private final CreateEventExecutor createEventExecutor;
+    private final BatchCompletionExecutor batchCompletionExecutor;
     private final PublishingEventExecutor publishingEventExecutor;
     private final UploadDocumentExecutor uploadDocumentExecutor;
     private final GetDocumentExecutor getDocumentExecutor;
@@ -35,14 +44,6 @@ public class DocumentWorker {
     private final Semaphore getDocumentProcessSemaphore;
     private final Semaphore updateJobStatusProcessSemaphore;
 
-    @Timed(
-            value = "process.upload-document",
-            percentiles = {
-                    0.5,
-                    0.95,
-                    0.99
-            }
-    )
     @Scheduled(fixedDelay = 500)
     public void uploadDocumentProcess() {
         if (!uploadDocumentProcessSemaphore.tryAcquire()) {
@@ -51,33 +52,72 @@ public class DocumentWorker {
 
         threadPoolUploadDocumentProcessExecutor.execute(() -> {
             try {
-                // Stage 1: upload documents
-                var uploadResult = uploadDocumentExecutor.execute();
+                //Stage 1: get batch
+                final var batchesGroupedByStatus = processingBatchProvider.take(
+                        ProcessingType.UPLOAD,
+                        10
+                );
 
-                if (uploadResult.isEmpty()) {
+                if (batchesGroupedByStatus.isEmpty())
                     return;
+
+                //Stage 2.1: upload document
+                var uploadResult = ProcessingActions.execute(
+                        () -> uploadDocumentExecutor.execute(
+                                Stream.of(ProcessingStatus.NEW)
+                                        .map(batchesGroupedByStatus::get)
+                                        .filter(Objects::nonNull)
+                                        .flatMap(List::stream)
+                                        .toList()
+                        )
+                );
+
+                // Stage 2.2: update status
+                ProcessingActions.executeAndRegroup(
+                        batchesGroupedByStatus,
+                        () -> updateTaskStatusExecutor.execute(
+                                batchesGroupedByStatus.get(ProcessingStatus.NEW),
+                                uploadResult
+                        )
+                );
+
+                // Stage 3: обновить operation и batch
+                ProcessingActions.executeAndRegroup(
+                        batchesGroupedByStatus,
+                        () -> batchCompletionExecutor.execute(
+                                batchesGroupedByStatus.get(ProcessingStatus.DOCUMENTS_UPLOADED)
+                        )
+                );
+
+                ProcessingActions.executeAndRegroup(
+                        batchesGroupedByStatus,
+                        () -> createEventExecutor.execute(
+                                batchesGroupedByStatus.get(ProcessingStatus.OPERATION_COMPLETED)
+                        )
+                );
+
+                //Stage 4.1: find event
+                var eventsIds =  operationEventsFinder.findEventByCompletedOperation(
+                        batchesGroupedByStatus.get(ProcessingStatus.CREATED_EVENT)
+                );
+
+                if (!eventsIds.isEmpty()) {
+                    //Stage 4.2 build message
+                    var message = eventMessageBuilder.buildUploadMessage(eventsIds);
+                    // Stage 4.3: send message
+                    ProcessingActions.execute(
+                            () -> publishingEventExecutor.execute(message)
+                    );
                 }
 
-                // Stage 2: update statuses based on upload results
-                updateTaskStatusExecutor.execute(uploadResult);
-
-                var operationsIds = uploadResult.stream().map(BatchExecutionResult::operationId).toList();
-
-                var eventsIds = operationEventsFinder.findEventByCompletedOperation(operationsIds);
-
-                if (eventsIds.isEmpty()) {
-                    return;
-                }
-
-                // Stage 3: build message
-                var message = eventMessageBuilder.buildUploadMessage(eventsIds);
-                if (message == null || message.isEmpty()) {
-                    return;
-                }
-                // Stage 4: send message
-                publishingEventExecutor.execute(message);
-                // Stage 5: update event status
-                updateEventStatusExecutor.execute(eventsIds);
+                // Stage 5: update event status=Done and batch status=Done
+                ProcessingActions.executeAndRegroup(
+                        batchesGroupedByStatus,
+                        () -> updateEventStatusExecutor.execute(
+                                batchesGroupedByStatus.get(ProcessingStatus.CREATED_EVENT),
+                                eventsIds
+                        )
+                );
             } catch (Exception e) {
                 log.error("Error in uploadDocumentProcess: ", e);
             } finally {
@@ -86,47 +126,47 @@ public class DocumentWorker {
         });
     }
 
-    @Timed(
-            value = "process.get-document",
-            percentiles = {
-                    0.5,
-                    0.95,
-                    0.99
-            }
-    )
-    @Scheduled(fixedDelay = 2000)
-    public void getDocumentProcess() {
-
-        if (!getDocumentProcessSemaphore.tryAcquire()) {
-            return;
-        }
-
-        threadPoolGetDocumentProcessExecutor.execute(() -> {
-            try {
-                var getDocumentResult = getDocumentExecutor.execute();
-
-                if (getDocumentResult == null || getDocumentResult.isEmpty()) {
-                    return;
-                }
-
-                var qq = updateTaskStatusExecutor.execute(getDocumentResult);
-
-                var eventIds = getDocumentResult.stream().map(BatchExecutionResult::operationId).toList();
-
-                var message = eventMessageBuilder.buildGetMessage(eventIds);
-
-                // Stage 4: send message
-                publishingEventExecutor.execute(message);
-
-                // Stage 5: update event status
-                updateEventStatusExecutor.execute(eventIds);
-            } catch (Exception e) {
-                log.error("Error in getDocumentProcess: ", e);
-            } finally {
-                getDocumentProcessSemaphore.release();
-            }
-        });
-    }
+//    @Timed(
+//            value = "process.get-document",
+//            percentiles = {
+//                    0.5,
+//                    0.95,
+//                    0.99
+//            }
+//    )
+//    @Scheduled(fixedDelay = 2000)
+//    public void getDocumentProcess() {
+//
+//        if (!getDocumentProcessSemaphore.tryAcquire()) {
+//            return;
+//        }
+//
+//        threadPoolGetDocumentProcessExecutor.execute(() -> {
+//            try {
+//                var getDocumentResult = getDocumentExecutor.execute();
+//
+//                if (getDocumentResult == null || getDocumentResult.isEmpty()) {
+//                    return;
+//                }
+//
+//                updateTaskStatusExecutor.execute(getDocumentResult);
+//
+//                var eventIds = getDocumentResult.stream().map(BatchExecutionResult::operationId).toList();
+//
+//                var message = eventMessageBuilder.buildGetMessage(eventIds);
+//
+//                // Stage 4: send message
+//                publishingEventExecutor.execute(message);
+//
+//                // Stage 5: update event status
+//                updateEventStatusExecutor.execute(eventIds);
+//            } catch (Exception e) {
+//                log.error("Error in getDocumentProcess: ", e);
+//            } finally {
+//                getDocumentProcessSemaphore.release();
+//            }
+//        });
+//    }
 
     @Scheduled(fixedDelay = 10000)
     public void jobProcess() {
@@ -142,5 +182,18 @@ public class DocumentWorker {
                 updateJobStatusProcessSemaphore.release();
             }
         });
+    }
+
+    private Map<ProcessingStatus, List<BatchContext>> regroup(
+            Map<ProcessingStatus, List<BatchContext>> batchesGroupedByStatus
+    ) {
+        return batchesGroupedByStatus.values()
+                .stream()
+                .flatMap(Collection::stream)
+                .collect(Collectors.groupingBy(
+                        BatchContext::getProcessingStatus,
+                        () -> new EnumMap<>(ProcessingStatus.class),
+                        Collectors.toList()
+                ));
     }
 }

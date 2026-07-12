@@ -14,7 +14,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class DocumentRepositoryServiceImpl implements DocumentRepositoryService {
+public class DocumentPersistenceServiceImpl implements DocumentPersistenceService {
     private final DocumentRepository documentRepository;
 
     @Transactional

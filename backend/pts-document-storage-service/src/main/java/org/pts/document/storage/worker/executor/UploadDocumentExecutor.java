@@ -2,10 +2,7 @@ package org.pts.document.storage.worker.executor;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.pts.document.storage.model.dto.BatchExecutionResult;
-import org.pts.document.storage.model.dto.TaskExecutionResult;
 import org.pts.document.storage.model.enums.ProcessingStatus;
-import org.pts.document.storage.model.enums.ProcessingType;
 import org.pts.document.storage.service.document.DocumentManagerService;
 import org.pts.document.storage.service.dto.BatchContext;
 import org.pts.document.storage.service.dto.DocumentContext;
@@ -15,6 +12,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -25,66 +24,39 @@ public class UploadDocumentExecutor {
     private final DocumentManagerService documentManagerService;
     private final ProcessingOperationManager processingOperationManager;
 
-    public List<BatchExecutionResult> execute() {
-        var batches = processingOperationManager.takeForProcessing(
-                ProcessingType.UPLOAD,
-                ProcessingStatus.NEW,
-                10
-        );
-
+    public Map<UUID, DocumentContext> execute(List<BatchContext> batchContexts) {
         try {
-            return batches.entrySet()
-                    .stream()
-                    .map(entry -> {
-                        var tasks = entry.getValue();
-
-                        var documents = documentManagerService.uploadDocumentsAsync(
-                                        tasks.stream()
-                                                .map(TaskContext::documentId)
-                                                .toList()
-                                ).stream()
-                                .collect(Collectors.toMap(
-                                        DocumentContext::documentId,
-                                        Function.identity()
-                                ));
-
-                        return BatchExecutionResult.builder()
-                                .operationId(entry.getKey().operationId())
-                                .batchId(entry.getKey().batchId())
-                                .taskExecutionResults(tasks.stream()
-                                        .map(item -> {
-                                            var document = documents.get(item.documentId());
-
-                                            return TaskExecutionResult.builder()
-                                                    .taskId(item.taskId())
-                                                    .documentId(document.documentId())
-                                                    .result(document.result())
-                                                    .message(document.message())
-                                                    .build();
-                                        })
-                                        .toList())
-                                .build();
-                    })
-                    .toList();
+            return batchContexts.stream()
+                    .flatMap(entry ->
+                            documentManagerService.uploadDocumentsAsync(
+                                            entry.getTaskContexts().stream()
+                                                    .map(TaskContext::getDocumentId)
+                                                    .toList()
+                                    )
+                                    .stream()
+                    )
+                    .collect(Collectors.toMap(
+                            DocumentContext::documentId,
+                            Function.identity(),
+                            (oldValue, newValue) -> oldValue
+                    ));
         } catch (Exception e) {
-            var batchIds = batches.keySet()
-                    .stream()
-                    .map(BatchContext::batchId)
+            var batchIds = batchContexts.stream()
+                    .map(BatchContext::getBatchId)
                     .toList();
-            var taskIds = batches.values()
-                    .stream()
-                    .flatMap(List::stream)
-                    .map(TaskContext::taskId)
+            var taskIds = batchContexts.stream()
+                    .flatMap(task -> task.getTaskContexts().stream())
+                    .map(TaskContext::getTaskId)
                     .toList();
-
-            log.error("Failed to upload documents for tasks: {} ", batchIds, e);
 
             markFailed(
                     batchIds,
                     taskIds
             );
 
-            return Collections.emptyList();
+            log.error("Failed to upload documents for tasks: {} ", batchIds, e);
+
+            return Collections.emptyMap();
         }
     }
 

@@ -4,6 +4,7 @@ import io.micrometer.core.annotation.Timed;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.pts.document.storage.model.enums.DocumentStatus;
 import org.pts.document.storage.service.dto.DocumentContext;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @RequiredArgsConstructor
 public class DocumentManagerServiceImpl implements DocumentManagerService {
-    private final DocumentService documentService;
+    private final DocumentStorageService documentStorageService;
     private final ExecutorService documentExecutorService;
 
     @Timed(
@@ -35,18 +36,18 @@ public class DocumentManagerServiceImpl implements DocumentManagerService {
                 .map(docId ->
                         CompletableFuture.supplyAsync(() -> {
                                     try {
-                                        var result = documentService.upload(docId);
+                                        var result = documentStorageService.upload(docId);
                                         log.info("Document {} uploaded successfully", docId);
                                         return new DocumentContext(
                                                 docId,
-                                                result,
+                                                DocumentStatus.UPLOADED,
                                                 "Document uploaded successfully"
                                         );
                                     } catch (Exception e) {
                                         log.error("Document {} failed to upload.", docId, e);
                                         return new DocumentContext(
                                                 docId,
-                                                null,
+                                                DocumentStatus.FAILED,
                                                 "Document failed to upload: " + e.getMessage()
                                         );
                                     }
@@ -56,6 +57,7 @@ public class DocumentManagerServiceImpl implements DocumentManagerService {
 
         return CompletableFuture
                 .allOf(futures.toArray(new CompletableFuture[0]))
+                .orTimeout(5, TimeUnit.MINUTES)
                 .thenApply(v ->
                         futures.stream()
                                 .map(CompletableFuture::join)
@@ -78,16 +80,16 @@ public class DocumentManagerServiceImpl implements DocumentManagerService {
                 .map(docId ->
                         CompletableFuture.supplyAsync(() -> {
                                     try {
-                                        var result = documentService.getDocument(docId);
+                                        var result = documentStorageService.getDocument(docId);
                                         return new DocumentContext(
                                                 docId,
-                                                result,
+                                                DocumentStatus.DONE,
                                                 "Fetch is done"
                                         );
                                     } catch (Exception e) {
                                         return new DocumentContext(
                                                 docId,
-                                                null,
+                                                DocumentStatus.FAILED,
                                                 "Fetch failed: " + e.getMessage()
                                         );
                                     }
@@ -97,6 +99,7 @@ public class DocumentManagerServiceImpl implements DocumentManagerService {
 
         return CompletableFuture
                 .allOf(futures.toArray(new CompletableFuture[0]))
+                .orTimeout(5, TimeUnit.MINUTES)
                 .thenApply(v ->
                         futures.stream()
                                 .map(CompletableFuture::join)

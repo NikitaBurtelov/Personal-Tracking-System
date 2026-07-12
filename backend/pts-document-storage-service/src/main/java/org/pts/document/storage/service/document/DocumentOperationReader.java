@@ -5,7 +5,7 @@ import org.pts.document.storage.model.entity.DocumentEntity;
 import java.util.List;
 import java.util.UUID;
 
-public interface DocumentOperationManager {
+public interface DocumentOperationReader {
     /**
      * Retrieves all documents associated with a given processing request ID.
      *
@@ -14,4 +14,3 @@ public interface DocumentOperationManager {
      */
     List<DocumentEntity> getDocumentsByOperationId(UUID operationId);
 }
-

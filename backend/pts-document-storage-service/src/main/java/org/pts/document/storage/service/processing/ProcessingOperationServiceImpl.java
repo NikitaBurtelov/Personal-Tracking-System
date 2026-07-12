@@ -3,6 +3,7 @@ package org.pts.document.storage.service.processing;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.pts.document.storage.model.entity.OutboxEventEntity;
+import org.pts.document.storage.model.enums.EventStatus;
 import org.pts.document.storage.model.enums.ProcessingStatus;
 import org.pts.document.storage.repository.OutboxEventRepository;
 import org.pts.document.storage.repository.ProcessingOperationRepository;
@@ -25,19 +26,18 @@ public class ProcessingOperationServiceImpl implements ProcessingOperationServic
     public Optional<UUID> onBatchCompleted(UUID operationId) {
         String status = processingOperationRepository.completeBatch(operationId);
 
-        if (status.equals(ProcessingStatus.DONE.getStatus())) {
+        if (status.equals(ProcessingStatus.DOCUMENTS_UPLOADED.getStatus())) {
             log.debug("Job completed successfully, operationId: {}", operationId);
 
             var event = OutboxEventEntity.builder()
                     .operationId(operationId)
+                    .status(EventStatus.NEW)
                     .published(false)
                     .build();
 
             outboxEventRepository.save(event);
 
             return Optional.of(event.getId());
-        }
-
-        else return Optional.empty();
+        } else return Optional.empty();
     }
 }

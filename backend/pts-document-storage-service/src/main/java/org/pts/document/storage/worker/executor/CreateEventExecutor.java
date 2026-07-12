@@ -10,31 +10,29 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class UpdateEventStatusExecutor {
+public class CreateEventExecutor {
     private final EventManager eventManager;
     private final ProcessingOperationManager processingOperationManager;
 
     @Transactional
-    public void execute(List<BatchContext> batchContexts, List<UUID> eventIds) {
+    public void execute(List<BatchContext> batchContexts) {
         try {
-            eventManager.markEventsAsPublished(eventIds);
+            var operationIds = batchContexts.stream()
+                    .map(batchContext -> {
+                        batchContext.setProcessingStatus(ProcessingStatus.CREATED_EVENT);
+                        return batchContext.getOperationId();
+                    })
+                    .collect(Collectors.toSet());
 
-            batchContexts.forEach(context -> {
-                context.setProcessingStatus(ProcessingStatus.DONE);
-            });
-
+            eventManager.createEvent(operationIds);
             processingOperationManager.updateBatchStatus(batchContexts);
-
-            log.info("Successfully processed publishing events, operationIds: {}",
-                    eventIds
-            );
         } catch (Exception e) {
-            throw new RuntimeException("Error while processing publishing events", e);
+            throw new RuntimeException(e);
         }
     }
 }

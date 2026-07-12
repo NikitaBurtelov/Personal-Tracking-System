@@ -20,9 +20,10 @@ import org.pts.document.storage.service.dto.TaskContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -54,7 +55,7 @@ public class ProcessingOperationManagerImpl implements ProcessingOperationManage
             var batchIds = new ArrayList<Long>();
 
             for (var chunk : chunks) {
-                var batchDocuments = documentRepository.findAllByKeyIn(chunk);
+                var batchDocuments = documentRepository.findAllByObjectKeyIn(chunk);
 
                 var batch = ProcessingBatchEntity.builder()
                         .type(ProcessingType.GET)
@@ -166,41 +167,32 @@ public class ProcessingOperationManagerImpl implements ProcessingOperationManage
 
     }
 
-    @Transactional
     @Override
-    public Map<BatchContext, List<TaskContext>> takeForProcessing(
-            ProcessingType type,
-            ProcessingStatus status,
-            int limit
-    ) {
+    public Map<ProcessingStatus, List<BatchContext>> takeForProcessing(ProcessingType type, int limit) {
         try {
-            var butches = batchRepository.findAllByTypeAndStatus(
+            var batches = batchRepository.findProcessingBatchByType(
                     type.getType(),
-                    status.getStatus(),
                     limit
             );
 
-            log.debug("Found {} butches for processing of type {} and status {}", butches.size(), type, status);
+            var processingOperationIds = batches.stream().map(ProcessingBatchEntity::getOperationId).toList();
 
-            butches.forEach(job -> job.setStatus(ProcessingStatus.PROCESSING));
+            var processingOperations = processingOperationRepository.findAllByIdIn(processingOperationIds);
 
-            var requests = processingOperationRepository.findAllByIdIn(
-                    butches.stream()
-                            .map(ProcessingBatchEntity::getOperationId)
-                            .toList()
-            );
+            processingOperations.forEach(processingOperation -> {
+                processingOperation.setStatus(ProcessingStatus.PROCESSING);
+            });
 
-            requests.forEach(request -> request.setStatus(ProcessingStatus.PROCESSING));
+            processingOperationRepository.saveAll(processingOperations);
+
+            //log.debug("Found {} batches for processing of type {} and status {}", batches.size(), type);
 
             var tasks = taskRepository
-                    .findAllByBatchIdInAndStatus(
-                            butches.stream()
+                    .findProcessingTaskByBatchIds(
+                            batches.stream()
                                     .map(ProcessingBatchEntity::getId)
-                                    .toList(),
-                            ProcessingStatus.NEW
+                                    .toList()
                     );
-
-            tasks.forEach(task -> task.setStatus(ProcessingStatus.PROCESSING));
 
             Map<Long, List<TaskContext>> idsTasksMap = tasks
                     .stream()
@@ -208,25 +200,21 @@ public class ProcessingOperationManagerImpl implements ProcessingOperationManage
                         return TaskContext.builder()
                                 .taskId(task.getId())
                                 .batchId(task.getBatchId())
+                                .processingStatus(task.getStatus())
                                 .documentId(task.getDocumentId())
-                                .status(task.getStatus())
                                 .build();
                     })
-                    .collect(Collectors.groupingBy(TaskContext::batchId));
+                    .collect(Collectors.groupingBy(TaskContext::getBatchId));
 
-            return butches.stream()
-                    .map(batch -> {
-                        return BatchContext.builder()
-                                .batchId(batch.getId())
-                                .operationId(batch.getOperationId())
-                                .type(batch.getType())
-                                .taskContexts(idsTasksMap.get(batch.getId()))
-                                .build();
-                    })
-                    .collect(Collectors.toMap(
-                            Function.identity(),
-                            batch -> idsTasksMap.getOrDefault(batch.batchId(), List.of())
-                    ));
+            return batches.stream()
+                    .map(batch -> BatchContext.builder()
+                            .batchId(batch.getId())
+                            .operationId(batch.getOperationId())
+                            .processingStatus(batch.getStatus())
+                            .type(batch.getType())
+                            .taskContexts(idsTasksMap.getOrDefault(batch.getId(), List.of()))
+                            .build())
+                    .collect(Collectors.groupingBy(BatchContext::getProcessingStatus));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -259,56 +247,108 @@ public class ProcessingOperationManagerImpl implements ProcessingOperationManage
 
     @Transactional
     @Override
+    public void updateBatchStatus(
+            List<BatchContext> batchContexts
+    ) {
+        Map<ProcessingStatus, List<BatchContext>> batchesGrouped = batchContexts
+                .stream()
+                .collect(
+                        Collectors.groupingBy(
+                                BatchContext::getProcessingStatus
+                        )
+                );
+
+        batchesGrouped.forEach((status, batches) -> {
+            if (batches != null && !batches.isEmpty()) {
+                batchRepository.updateStatus(
+                        batches.stream().map(BatchContext::getBatchId).toList(),
+                        status
+                );
+            }
+        });
+    }
+
+    @Override
+    @Transactional
     public void updateBatchAndTaskStatus(
-            Map<Long, ProcessingStatus> batchStatusMap,
-            Map<Long, ProcessingStatus> taskStatusMap
+            List<BatchContext> batchContexts
     ) {
         try {
-            Map<ProcessingStatus, List<Long>> batchesGrouped = batchStatusMap.entrySet()
+            Map<ProcessingStatus, List<BatchContext>> batchesGrouped = batchContexts
                     .stream()
-                    .collect(Collectors.groupingBy(
-                            Map.Entry::getValue,
-                            Collectors.mapping(Map.Entry::getKey, Collectors.toList())
-                    ));
+                    .collect(
+                            Collectors.groupingBy(
+                                    BatchContext::getProcessingStatus
+                            )
+                    );
 
             log.debug("Updating job statuses: {}", batchesGrouped);
 
-            batchesGrouped.forEach((status, ids) -> {
-                if (ids != null && !ids.isEmpty()) {
-                    batchRepository.updateStatus(ids, status);
+            batchesGrouped.forEach((status, batches) -> {
+                if (batches != null && !batches.isEmpty()) {
+                    batchRepository.updateStatus(
+                            batches.stream().map(BatchContext::getBatchId).toList(),
+                            status
+                    );
                 }
             });
 
-            Map<ProcessingStatus, List<Long>> tasksGrouped = taskStatusMap.entrySet()
+            Map<ProcessingStatus, List<TaskContext>> tasksGrouped = batchContexts
                     .stream()
-                    .collect(Collectors.groupingBy(
-                            Map.Entry::getValue,
-                            Collectors.mapping(Map.Entry::getKey, Collectors.toList())
-                    ));
+                    .map(BatchContext::getTaskContexts)
+                    .flatMap(List::stream)
+                    .collect(
+                            Collectors.groupingBy(
+                                    TaskContext::getProcessingStatus
+                            )
+                    );
 
-            tasksGrouped.forEach((status, ids) -> {
-                if (ids != null && !ids.isEmpty()) {
-                    taskRepository.updateStatus(ids, status);
+
+            tasksGrouped.forEach((status, tasks) -> {
+                if (tasks != null && !tasks.isEmpty()) {
+                    taskRepository.updateStatus(
+                            tasks.stream().map(TaskContext::getTaskId).toList(),
+                            status
+                    );
                 }
             });
 
             log.debug("Updated item statuses: {}", tasksGrouped);
-
-            var doneBatchIds = batchStatusMap.entrySet().stream()
-                    .filter(e -> e.getValue() == ProcessingStatus.DONE)
-                    .map(Map.Entry::getKey)
-                    .toList();
-
-            if (!doneBatchIds.isEmpty()) {
-                var doneBatches = batchRepository.findAllById(doneBatchIds);
-                doneBatches.forEach(batch ->
-                        processingOperationService
-                                .onBatchCompleted(batch.getOperationId())
-                );
-            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    @Transactional
+    public void onBatchCompleted(List<BatchContext> batchContexts) {
+        batchContexts.forEach(batch -> {
+            var eventId = processingOperationService.onBatchCompleted(batch.getOperationId());
+
+            if (eventId.isEmpty()) {
+                batch.setProcessingStatus(ProcessingStatus.DONE);
+            } else {
+                batch.setProcessingStatus(ProcessingStatus.OPERATION_COMPLETED);
+                batch.setOperationId(eventId.get());
+            }
+        });
+
+        Map<ProcessingStatus, List<BatchContext>> batchesGrouped = batchContexts
+                .stream()
+                .collect(
+                        Collectors.groupingBy(
+                                BatchContext::getProcessingStatus
+                        )
+                );
+
+        batchesGrouped.forEach((status, batches) -> {
+            if (batches != null && !batches.isEmpty()) {
+                batchRepository.updateStatus(
+                        batches.stream().map(BatchContext::getBatchId).toList(),
+                        status
+                );
+            }
+        });
     }
 
     private <T> List<List<T>> chunk(List<T> list, int size) {

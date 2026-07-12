@@ -4,14 +4,18 @@ import org.pts.document.storage.model.entity.OutboxEventEntity;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
-public interface EventManagerService {
+public interface EventManager {
     @Transactional
     List<OutboxEventEntity> getUnpublishedEvents(int limit);
 
     @Transactional
     List<OutboxEventEntity> getUnpublishedEvents(List<UUID> eventIds);
+
+    @Transactional
+    void createEvent(Set<UUID> operationIds);
 
     @Transactional
     void markEventsAsPublished(List<UUID> eventsIds);

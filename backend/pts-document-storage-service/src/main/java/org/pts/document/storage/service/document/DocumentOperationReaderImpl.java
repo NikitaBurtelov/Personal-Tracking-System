@@ -15,7 +15,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class DocumentOperationManagerImpl implements DocumentOperationManager {
+public class DocumentOperationReaderImpl implements DocumentOperationReader {
     private final ProcessingBatchRepository processingBatchRepository;
     private final ProcessingTaskRepository processingTaskRepository;
     private final DocumentRepository documentRepository;

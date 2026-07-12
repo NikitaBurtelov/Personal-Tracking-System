@@ -10,9 +10,9 @@ import java.util.UUID;
 
 @Repository
 public interface DocumentRepository extends CrudRepository<DocumentEntity, UUID> {
-    DocumentEntity findAllByKey(String key);
+    DocumentEntity findAllByObjectKey(String key);
 
-    List<DocumentEntity> findAllByKeyIn(Collection<String> keys);
+    List<DocumentEntity> findAllByObjectKeyIn(Collection<String> keys);
 
     List<DocumentEntity> findAllByIdIn(Collection<UUID> ids);
 }

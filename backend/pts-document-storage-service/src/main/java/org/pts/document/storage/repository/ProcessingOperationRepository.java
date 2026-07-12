@@ -16,10 +16,14 @@ public interface ProcessingOperationRepository extends JpaRepository<ProcessingO
     @Query(value = """
             UPDATE document_storage_schema.processing_operation
             SET
-                completed_batch = completed_batch + 1,
+                completed_batch = CASE
+                            WHEN completed_batch = total_batch
+                            THEN completed_batch
+                            ELSE completed_batch + 1
+                        END,
                 status = CASE
-                            WHEN completed_batch + 1 = total_batch
-                            THEN 'DONE'
+                            WHEN completed_batch + 1 >= total_batch
+                            THEN 'DOCUMENTS_UPLOADED'
                             ELSE status
                          END,
                 completed_at = CASE
@@ -30,7 +34,7 @@ public interface ProcessingOperationRepository extends JpaRepository<ProcessingO
             WHERE id = :operationId
               AND status = 'PROCESSING'
             RETURNING status
-            """, nativeQuery = true)
+           """, nativeQuery = true)
     String completeBatch(UUID operationId);
 
     @Query(value = """

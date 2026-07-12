@@ -5,7 +5,6 @@ import org.pts.document.storage.messaging.dto.GetDocumentSourceRequest;
 import org.pts.document.storage.model.enums.ProcessingStatus;
 import org.pts.document.storage.model.enums.ProcessingType;
 import org.pts.document.storage.service.dto.BatchContext;
-import org.pts.document.storage.service.dto.TaskContext;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -19,9 +18,8 @@ public interface ProcessingOperationManager {
     void createUploadDocumentTask(UploadDocumentCommand msg);
 
     @Transactional
-    Map<BatchContext, List<TaskContext>> takeForProcessing(
+    Map<ProcessingStatus, List<BatchContext>> takeForProcessing(
             ProcessingType type,
-            ProcessingStatus status,
             int limit
     );
 
@@ -34,7 +32,14 @@ public interface ProcessingOperationManager {
 
     @Transactional
     void updateBatchAndTaskStatus(
-            Map<Long, ProcessingStatus> batchStatusMap,
-            Map<Long, ProcessingStatus> taskStatusMap
+            List<BatchContext> batchContexts
     );
+
+    @Transactional
+    void updateBatchStatus(
+            List<BatchContext> batchContexts
+    );
+
+    @Transactional
+    void onBatchCompleted(List<BatchContext> batchContexts);
 }
