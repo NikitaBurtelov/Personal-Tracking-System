@@ -2,11 +2,11 @@ package org.pts.document.storage.worker.executor;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.pts.document.storage.domain.enums.ProcessingStatus;
-import org.pts.document.storage.domain.document.DocumentManager;
 import org.pts.document.storage.domain.context.BatchContext;
 import org.pts.document.storage.domain.context.DocumentContext;
 import org.pts.document.storage.domain.context.TaskContext;
+import org.pts.document.storage.domain.document.DocumentManager;
+import org.pts.document.storage.domain.enums.ProcessingStatus;
 import org.pts.document.storage.domain.processing.ProcessingOperationManager;
 import org.springframework.stereotype.Component;
 
@@ -25,6 +25,10 @@ public class UploadDocumentExecutor {
     private final ProcessingOperationManager processingOperationManager;
 
     public Map<UUID, DocumentContext> execute(List<BatchContext> batchContexts) {
+        if (batchContexts.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
         try {
             return batchContexts.stream()
                     .flatMap(entry ->

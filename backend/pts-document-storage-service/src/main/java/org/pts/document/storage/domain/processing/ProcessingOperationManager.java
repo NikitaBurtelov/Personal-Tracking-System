@@ -1,10 +1,10 @@
 package org.pts.document.storage.domain.processing;
 
-import org.pts.document.storage.messaging.command.UploadDocumentCommand;
-import org.pts.document.storage.messaging.dto.GetDocumentSourceRequest;
+import org.pts.document.storage.domain.context.BatchContext;
 import org.pts.document.storage.domain.enums.ProcessingStatus;
 import org.pts.document.storage.domain.enums.ProcessingType;
-import org.pts.document.storage.domain.context.BatchContext;
+import org.pts.document.storage.messaging.command.UploadDocumentCommand;
+import org.pts.document.storage.messaging.dto.GetDocumentSourceRequest;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;

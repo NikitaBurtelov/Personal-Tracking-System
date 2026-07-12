@@ -2,9 +2,9 @@ package org.pts.document.storage.domain.document.service;
 
 import lombok.RequiredArgsConstructor;
 import org.pts.document.storage.domain.document.entity.DocumentEntity;
+import org.pts.document.storage.domain.document.repository.DocumentRepository;
 import org.pts.document.storage.domain.processing.entity.ProcessingBatchEntity;
 import org.pts.document.storage.domain.processing.entity.ProcessingTaskEntity;
-import org.pts.document.storage.domain.document.repository.DocumentRepository;
 import org.pts.document.storage.domain.processing.repository.ProcessingBatchRepository;
 import org.pts.document.storage.domain.processing.repository.ProcessingTaskRepository;
 import org.springframework.stereotype.Service;

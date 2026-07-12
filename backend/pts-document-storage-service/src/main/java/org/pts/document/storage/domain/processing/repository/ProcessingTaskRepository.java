@@ -1,7 +1,7 @@
 package org.pts.document.storage.domain.processing.repository;
 
-import org.pts.document.storage.domain.processing.entity.ProcessingTaskEntity;
 import org.pts.document.storage.domain.enums.ProcessingStatus;
+import org.pts.document.storage.domain.processing.entity.ProcessingTaskEntity;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;

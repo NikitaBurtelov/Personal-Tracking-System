@@ -1,7 +1,7 @@
 package org.pts.document.storage.worker.support;
 
-import org.pts.document.storage.domain.enums.ProcessingStatus;
 import org.pts.document.storage.domain.context.BatchContext;
+import org.pts.document.storage.domain.enums.ProcessingStatus;
 
 import java.util.Collection;
 import java.util.EnumMap;

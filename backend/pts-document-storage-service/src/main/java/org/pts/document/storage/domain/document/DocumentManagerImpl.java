@@ -4,9 +4,9 @@ import io.micrometer.core.annotation.Timed;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.pts.document.storage.domain.context.DocumentContext;
 import org.pts.document.storage.domain.document.service.DocumentStorageService;
 import org.pts.document.storage.domain.enums.DocumentStatus;
-import org.pts.document.storage.domain.context.DocumentContext;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

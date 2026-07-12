@@ -1,7 +1,7 @@
 package org.pts.document.storage.domain.processing.repository;
 
-import org.pts.document.storage.domain.processing.entity.ProcessingBatchEntity;
 import org.pts.document.storage.domain.enums.ProcessingStatus;
+import org.pts.document.storage.domain.processing.entity.ProcessingBatchEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
