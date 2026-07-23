@@ -10,6 +10,9 @@ plugins {
 group = "org.pts"
 version = "1.0.0"
 
+var springBootVersion = "4.1.0"
+var springCloudVersion = "2025.1.2"
+
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(21))
@@ -25,12 +28,6 @@ allprojects {
     }
 }
 
-dependencyManagement {
-    imports {
-        mavenBom("org.springframework.boot:spring-boot-dependencies:4.1.0")
-    }
-}
-
 subprojects {
     apply(plugin = "io.spring.dependency-management")
     apply(plugin = "java")
@@ -38,7 +35,12 @@ subprojects {
 
     dependencyManagement {
         imports {
-            mavenBom("org.springframework.boot:spring-boot-dependencies:4.1.0")
+            mavenBom(
+                "org.springframework.boot:spring-boot-dependencies:$springBootVersion",
+            )
+            mavenBom(
+                "org.springframework.cloud:spring-cloud-dependencies:$springCloudVersion"
+            )
         }
     }
 

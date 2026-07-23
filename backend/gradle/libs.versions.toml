@@ -22,6 +22,12 @@ spring-config = {module = "org.springframework.boot:spring-boot-configuration-pr
 spring-expression = {module = "org.springframework:spring-expression" }
 spring-retry = {module = "org.springframework.retry:spring-retry" }
 spring-redis = {module = "org.springframework.boot:spring-boot-starter-data-redis" }
+spring-vault = {module = "org.springframework.vault:spring-vault-core" }
+
+# Spring Cloud
+spring-cloud-vault = { module = "org.springframework.cloud:spring-cloud-starter-vault-config" }
+spring-cloud-resilience4j = { module = "org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j" }
+spring-cloud-kubernetes = { module = "org.springframework.cloud:spring-cloud-starter-kubernetes-client-config" }
 
 # React
 spring-web-flux = {module = "org.springframework.boot:spring-boot-starter-webflux" }
