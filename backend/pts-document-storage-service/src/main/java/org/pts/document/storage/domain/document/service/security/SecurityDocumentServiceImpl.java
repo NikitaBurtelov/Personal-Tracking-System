@@ -19,17 +19,18 @@ import java.security.SecureRandom;
 @Slf4j
 @RequiredArgsConstructor
 public class SecurityDocumentServiceImpl implements SecurityDocumentService {
-    private final SecretKey masterKey;
+    private final DocumentKeyEncryptionService documentKeyEncryptionService;
 
     @Override
     public CipherInputStream decryptByStream(
             InputStream encryptedStream,
-            byte[] encryptedDataKey,
+            String encryptedDataKey,
             byte[] iv
-    ) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+    ) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException {
+        var keyBytes = documentKeyEncryptionService.decryptDocumentKey(encryptedDataKey);
+        var dataKey = new SecretKeySpec(keyBytes, "AES");
 
-        var dataKey = decryptDataKey(encryptedDataKey, iv);
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
 
         cipher.init(
                 Cipher.DECRYPT_MODE,
@@ -37,21 +38,23 @@ public class SecurityDocumentServiceImpl implements SecurityDocumentService {
                 new GCMParameterSpec(128, iv)
         );
 
-        return new CipherInputStream(encryptedStream, cipher);
+        return new CipherInputStream(
+                encryptedStream,
+                cipher
+        );
     }
 
     @Override
     public Pair<CipherInputStream, EncryptedPayload> encryptByStream(
             InputStream objectStream
-    ) throws Exception {
+    ) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeyException {
         var keyGenerator = KeyGenerator.getInstance("AES");
         keyGenerator.init(256);
 
-        byte[] iv = new byte[12];
-        new SecureRandom().nextBytes(iv);
-
         var secretKey = keyGenerator.generateKey();
-        var encryptDataKey = encryptDataKey(secretKey, iv);
+
+        byte[] iv = new byte[12];
+        SecureRandom.getInstanceStrong().nextBytes(iv);
 
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         cipher.init(
@@ -62,6 +65,9 @@ public class SecurityDocumentServiceImpl implements SecurityDocumentService {
 
         CipherInputStream cipherStream = new CipherInputStream(objectStream, cipher);
 
+        var encryptDataKey = documentKeyEncryptionService.encryptDocumentKey(
+                secretKey.getEncoded()
+        );
 
         return Pair.of(
                 cipherStream,
@@ -70,27 +76,5 @@ public class SecurityDocumentServiceImpl implements SecurityDocumentService {
                         .iv(iv)
                         .build()
         );
-    }
-
-    private byte[] encryptDataKey(SecretKey dataKey, byte[] iv) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        cipher.init(
-                Cipher.ENCRYPT_MODE,
-                masterKey,
-                new GCMParameterSpec(128, iv)
-        );
-
-        return cipher.doFinal(dataKey.getEncoded());
-    }
-
-    private SecretKey decryptDataKey(byte[] dataKey, byte[] iv) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        cipher.init(
-                Cipher.DECRYPT_MODE,
-                masterKey,
-                new GCMParameterSpec(128, iv)
-        );
-
-        return new SecretKeySpec(cipher.doFinal(dataKey), "AES");
     }
 }

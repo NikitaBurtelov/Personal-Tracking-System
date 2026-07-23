@@ -21,6 +21,10 @@ public class CreateEventExecutor {
 
     @Transactional
     public void execute(List<BatchContext> batchContexts) {
+        if (batchContexts == null || batchContexts.isEmpty()) {
+            return;
+        }
+
         try {
             var operationIds = batchContexts.stream()
                     .map(batchContext -> {
@@ -30,6 +34,7 @@ public class CreateEventExecutor {
                     .collect(Collectors.toSet());
 
             eventManager.createEvent(operationIds);
+
             processingOperationManager.updateBatchStatus(batchContexts);
         } catch (Exception e) {
             throw new RuntimeException(e);

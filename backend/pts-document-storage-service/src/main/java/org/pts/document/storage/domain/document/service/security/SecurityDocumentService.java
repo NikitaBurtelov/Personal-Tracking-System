@@ -15,7 +15,7 @@ import java.security.NoSuchAlgorithmException;
 public interface SecurityDocumentService {
     CipherInputStream decryptByStream(
             InputStream encryptedStream,
-            byte[] encryptedDataKey,
+            String encryptedDataKey,
             byte[] iv
     ) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException;
 

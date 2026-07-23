@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public interface ProcessingOperationManager {
     @Transactional
@@ -42,4 +43,7 @@ public interface ProcessingOperationManager {
 
     @Transactional
     void onBatchCompleted(List<BatchContext> batchContexts);
+
+    @Transactional
+    void updateProcessingOperationStatus(List<UUID> processingIds, ProcessingStatus status);
 }

@@ -8,4 +8,3 @@ public record GetDocumentSourceRequest(
         List<String> s3Keys
 ) {
 }
-

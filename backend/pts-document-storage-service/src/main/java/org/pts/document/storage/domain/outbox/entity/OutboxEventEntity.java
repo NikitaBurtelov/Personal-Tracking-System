@@ -37,6 +37,7 @@ public class OutboxEventEntity {
         if (id == null) {
             id = UUID.randomUUID();
         }
+        status = EventStatus.NEW;
         createdAt = Instant.now();
         updatedAt = createdAt;
     }

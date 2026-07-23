@@ -4,7 +4,7 @@ import lombok.Builder;
 
 @Builder
 public record EncryptedPayload(
-        byte[] encryptedDataKey,
+        String encryptedDataKey,
         byte[] iv
 ) {
 }

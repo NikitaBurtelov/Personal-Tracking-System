@@ -57,8 +57,8 @@ public class ProcessingOperationManagerImpl implements ProcessingOperationManage
 
             for (var chunk : chunks) {
                 var batchDocuments = documentRepository.findAllByObjectKeyIn(chunk);
-
                 var batch = ProcessingBatchEntity.builder()
+                        .operationId(msg.workId())
                         .type(ProcessingType.GET)
                         .status(ProcessingStatus.NEW)
                         .build();
@@ -84,14 +84,14 @@ public class ProcessingOperationManagerImpl implements ProcessingOperationManage
             var processingRequest = ProcessingOperation.builder()
                     .id(msg.workId())
                     .totalBatch(batchIds.size())
-                    .type(ProcessingType.UPLOAD)
+                    .type(ProcessingType.GET)
                     .build();
 
             processingOperationRepository.save(processingRequest);
 
             log.info("Tasks created: {} for request:{}", batchIds, msg.workId());
         } catch (Exception e) {
-            throw new RuntimeException("Failed to create tasks for request:{}" + msg.workId(), e);
+            throw new RuntimeException("Failed to create tasks for request: " + msg.workId(), e);
         }
     }
 
@@ -163,7 +163,7 @@ public class ProcessingOperationManagerImpl implements ProcessingOperationManage
 
             log.info("Tasks created: {} for request:{}", batchIds, msg.workId());
         } catch (Exception e) {
-            throw new RuntimeException("Failed to create tasks for request:{}" + msg.workId(), e);
+            throw new RuntimeException("Failed to create tasks for request: " + msg.workId(), e);
         }
 
     }
@@ -324,13 +324,14 @@ public class ProcessingOperationManagerImpl implements ProcessingOperationManage
     @Transactional
     public void onBatchCompleted(List<BatchContext> batchContexts) {
         batchContexts.forEach(batch -> {
-            var eventId = processingOperationService.onBatchCompleted(batch.getOperationId());
+            var processingStatus = processingOperationService.onBatchCompleted(batch.getOperationId());
 
-            if (eventId.isEmpty()) {
+            if (processingStatus.equals(ProcessingStatus.PROCESSING)) {
                 batch.setProcessingStatus(ProcessingStatus.DONE);
-            } else {
+            }
+
+            if (processingStatus.equals(ProcessingStatus.DOCUMENTS_UPLOADED)) {
                 batch.setProcessingStatus(ProcessingStatus.OPERATION_COMPLETED);
-                batch.setOperationId(eventId.get());
             }
         });
 
@@ -349,6 +350,16 @@ public class ProcessingOperationManagerImpl implements ProcessingOperationManage
                         status
                 );
             }
+        });
+    }
+
+    @Transactional
+    @Override
+    public void updateProcessingOperationStatus(List<UUID> processingIds, ProcessingStatus status) {
+        var processingOperations = processingOperationRepository.findAllByIdIn(processingIds);
+
+        processingOperations.forEach(processingOperation -> {
+            processingOperation.setStatus(status);
         });
     }
 

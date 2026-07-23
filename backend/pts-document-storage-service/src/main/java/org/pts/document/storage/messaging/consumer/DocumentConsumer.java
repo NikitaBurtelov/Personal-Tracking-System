@@ -41,18 +41,20 @@ public class DocumentConsumer {
             log.info("A request to upload files has been received. workId:{}", message.workId());
             processingOperationManager.createUploadDocumentTask(message);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            log.error(e.getMessage(), e);
         }
     }
 
     @KafkaHandler
-    public void getDocumentSource(GetDocumentSourceRequest message) {
+    public void getDocumentSource(
+            @Payload GetDocumentSourceRequest message
+    ) {
         try {
             log.info("Request to view files received. workId:{}", message.workId());
             processingOperationManager.createGetDocumentTask(message);
 
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            log.error(e.getMessage(), e);
         }
     }
 

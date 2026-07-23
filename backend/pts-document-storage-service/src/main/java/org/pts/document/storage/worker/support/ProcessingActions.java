@@ -48,13 +48,17 @@ public final class ProcessingActions {
     private static void regroup(
             Map<ProcessingStatus, List<BatchContext>> batchesGroupedByStatus
     ) {
-        batchesGroupedByStatus.values()
-                .stream()
-                .flatMap(Collection::stream)
-                .collect(Collectors.groupingBy(
-                        BatchContext::getProcessingStatus,
-                        () -> new EnumMap<>(ProcessingStatus.class),
-                        Collectors.toList()
-                ));
+        Map<ProcessingStatus, List<BatchContext>> regrouped =
+                batchesGroupedByStatus.values()
+                        .stream()
+                        .flatMap(Collection::stream)
+                        .collect(Collectors.groupingBy(
+                                BatchContext::getProcessingStatus,
+                                () -> new EnumMap<>(ProcessingStatus.class),
+                                Collectors.toList()
+                        ));
+
+        batchesGroupedByStatus.clear();
+        batchesGroupedByStatus.putAll(regrouped);
     }
 }

@@ -1,12 +1,12 @@
 package org.pts.document.storage.domain.processing.service;
 
+import org.pts.document.storage.domain.enums.ProcessingStatus;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
 import java.util.UUID;
 
 public interface ProcessingOperationService {
 
     @Transactional
-    Optional<UUID> onBatchCompleted(UUID operationId);
+    ProcessingStatus onBatchCompleted(UUID operationId);
 }

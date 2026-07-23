@@ -144,7 +144,7 @@ public class DocumentStorageServiceImpl implements DocumentStorageService {
                                     "original-tempKey", tempKey != null ? tempKey : "",
                                     "original-file-name", originalFileName != null ? originalFileName : "",
                                     "iv", encode(encryptedPayload.iv()),
-                                    "encrypted-data-tempKey", encode(encryptedPayload.encryptedDataKey())
+                                    "encrypted-data-tempKey", encryptedPayload.encryptedDataKey()
                             ))
                             .contentType("application/octet-stream")
                             .build(),

@@ -2,6 +2,7 @@ package org.pts.document.storage.domain.outbox;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.pts.document.storage.domain.enums.EventStatus;
 import org.pts.document.storage.domain.outbox.entity.OutboxEventEntity;
 import org.pts.document.storage.domain.outbox.repository.OutboxEventRepository;
 import org.springframework.stereotype.Service;
@@ -38,6 +39,7 @@ public class EventManagerImpl implements EventManager {
         operationIds.forEach(operationId -> {
             var event = OutboxEventEntity.builder()
                     .operationId(operationId)
+                    .status(EventStatus.NEW)
                     .published(false)
                     .build();
 
@@ -56,7 +58,10 @@ public class EventManagerImpl implements EventManager {
             return;
         }
 
-        events.forEach(event -> event.setPublished(true));
+        events.forEach(event -> {
+            event.setPublished(true);
+            event.setStatus(EventStatus.PUBLISHED);
+        });
 
         outboxEventRepository.saveAll(events);
     }
